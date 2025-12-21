@@ -29,6 +29,7 @@ export const authOptions: NextAuthOptions = {
 
       if (!existingUser.length) {
         await db.insert(users).values({
+          id: user.id,
           name: user.name ?? null,
           email: user.email,
           image: user.image ?? null,
@@ -57,6 +58,7 @@ export const authOptions: NextAuthOptions = {
           id: token.id,
           name: token.name,
           email: token.email,
+          image: token.image,
         },
         process.env.JWT_SECRET!,
         { expiresIn: "7d" }

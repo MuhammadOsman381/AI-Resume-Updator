@@ -1,16 +1,63 @@
+import { decodeToken } from "@/services/JwtService";
 import { ParseCV } from "@/services/LangchainService";
 import { GetText } from "@/services/PdfService";
 import { NextResponse } from "next/server";
+import { db } from "@/db";
+import { cvs } from "@/db/schema";
+import { eq, and } from "drizzle-orm";
 
 export async function POST(req: Request) {
-    const formData = await req.formData();
-    const title = formData.get("title")?.toString() || "";
-    const file = formData.get("file") as File | null;
-    if (!file || !title) {
-        return NextResponse.json({ status: "error", message: "Please fill all fields" });
+    const authHeader = req.headers.get("authorization");
+    if (!authHeader) {
+        return NextResponse.json(
+            { status: "error", message: "Unauthorized" },
+            { status: 401 }
+        );
     }
-    const pdfText = await GetText(file)
-    const structuredOutput = await ParseCV(pdfText)
-    console.log(structuredOutput);
-    return NextResponse.json({ status: "ok", title, fileName: file?.name, message: "CV/Resume uploaded succesfully" });
+    const user = decodeToken(authHeader);
+    if (!user || !user.id) {
+        return NextResponse.json(
+            { status: "error", message: "Invalid token" },
+            { status: 401 }
+        );
+    }
+    const formData = await req.formData();
+    const file = formData.get("file") as File | null;
+    const title = formData.get("title")?.toString() || "";
+    if (!file || !title) {
+        return NextResponse.json({
+            status: "error",
+            message: "Please fill all fields",
+        });
+    }
+    const existingCv = await db
+        .select()
+        .from(cvs)
+        .where(
+            and(
+                eq(cvs.userId, user.id),
+                eq(cvs.title, title)
+            )
+        )
+        .limit(1);
+    if (existingCv.length > 0) {
+        return NextResponse.json({
+            status: "error",
+            message: "CV with this title already exists.",
+        });
+    }
+    const pdfText = await GetText(file);
+    const structuredOutput = await ParseCV(pdfText);
+    const userCV = await db.insert(cvs).values({
+        userId: user.id,
+        title,
+        cvJson: structuredOutput,
+    });
+    return NextResponse.json({
+        status: "ok",
+        title,
+        fileName: file.name,
+        userCV: userCV,
+        message: "CV/Resume uploaded successfully",
+    });
 }

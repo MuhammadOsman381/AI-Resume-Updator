@@ -8,7 +8,7 @@ export default function Login() {
   useEffect(() => {
     if (session?.jwt) {
       console.log("Signed JWT token:", session.jwt);
-      localStorage.setItem("token", session.jwt); 
+      localStorage.setItem("authorization", session.jwt); 
     }
   }, [session]);
 

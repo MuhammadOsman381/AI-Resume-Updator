@@ -5,6 +5,7 @@ import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import SpinnerLoader from "@/components/SpinnerLoader";
 
 export default function Login() {
   const { data: session, status } = useSession();
@@ -13,7 +14,7 @@ export default function Login() {
   useEffect(() => {
     if (session) {
       if (session.jwt) {
-        localStorage.setItem("token", session.jwt); // store JWT
+        localStorage.setItem("authorization", session.jwt); 
       }
       router.push("/user");
     }
@@ -22,7 +23,10 @@ export default function Login() {
   if (status === "loading") {
     return (
       <div className="flex justify-center items-center h-screen">
-        <p className="text-lg text-gray-500">Loading...</p>
+        <div className="text-xl flex items-center justify-center text-center gap-2  text-gray-500">
+          Loading
+          <SpinnerLoader size="7" color="black"/>
+          </div>
       </div>
     );
   }
@@ -48,7 +52,7 @@ export default function Login() {
 
           {session && (
             <div className="text-center">
-              <p className="text-gray-700 mb-4">Signed in as {session.user?.email}</p>
+              <p className="text-gray-700 mb-4">Signed in as {session?.user?.email}</p>
               <Button variant="destructive" onClick={() => signOut()}>
                 Sign out
               </Button>
