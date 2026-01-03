@@ -4,7 +4,8 @@ import { db } from "@/db";
 import { cvs } from "@/db/schema";
 import { eq, and } from "drizzle-orm";
 import { GenerateImprovedCV } from "@/services/LangchainService";
-import puppeteer from "puppeteer";
+import puppeteer from "puppeteer-core";
+import chromium from "@sparticuz/chromium";
 import ejs from "ejs";
 import path from "path";
 
@@ -63,8 +64,9 @@ export async function POST(req: Request) {
     });
 
     const browser = await puppeteer.launch({
-        headless: true,
-        args: ["--no-sandbox", "--disable-setuid-sandbox"],
+        args: chromium.args,
+        executablePath: await chromium.executablePath(), // must await
+        headless: true,              // true or false
     });
 
     const page = await browser.newPage();

@@ -3,7 +3,8 @@ import { db } from "@/db";
 import { cvs } from "@/db/schema";
 import { eq, and } from "drizzle-orm";
 import { decodeToken } from "@/services/JwtService";
-import puppeteer from "puppeteer";
+import puppeteer from "puppeteer-core";
+import chromium from "@sparticuz/chromium";
 import ejs from "ejs";
 import path from "path";
 
@@ -52,15 +53,17 @@ export async function GET(req: Request) {
         education: cvData.education,
     });
 
+
     const browser = await puppeteer.launch({
-        headless: true,
-        args: ["--no-sandbox", "--disable-setuid-sandbox"],
+        args: chromium.args,
+        executablePath: await chromium.executablePath(), // must await
+        headless: true,              // true or false
     });
 
     const page = await browser.newPage();
     await page.setContent(html, { waitUntil: "networkidle0" });
 
-    const pdfBuffer:any = await page.pdf({
+    const pdfBuffer: any = await page.pdf({
         format: "A4",
         printBackground: true,
         margin: {
