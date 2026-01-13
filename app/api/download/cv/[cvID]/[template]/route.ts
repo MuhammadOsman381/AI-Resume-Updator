@@ -3,7 +3,7 @@ import { db } from "@/db";
 import { cvs } from "@/db/schema";
 import { eq, and } from "drizzle-orm";
 import { decodeToken } from "@/services/JwtService";
-import puppeteer from "puppeteer-core";
+import puppeteer from "puppeteer";
 import ejs from "ejs";
 import path from "path";
 import os from "os";
@@ -40,7 +40,6 @@ async function getBrowser() {
 
   return await puppeteer.launch({
     headless: true,
-    executablePath,
     args: ["--no-sandbox", "--disable-setuid-sandbox"],
   });
 }
