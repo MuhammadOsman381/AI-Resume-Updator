@@ -8,6 +8,9 @@ import chromium from "@sparticuz/chromium-min";
 import ejs from "ejs";
 import path from "path";
 
+const remoteExecutablePath =
+ "https://github.com/Sparticuz/chromium/releases/download/v121.0.0/chromium-v121.0.0-pack.tar";
+
 export async function GET(req: Request) {
     const authHeader = req.headers.get("authorization");
     if (!authHeader) {
@@ -56,7 +59,7 @@ export async function GET(req: Request) {
 
     const browser = await puppeteer.launch({
         args: chromium.args,
-        executablePath: await chromium.executablePath(), // must await
+        executablePath: await chromium.executablePath(remoteExecutablePath), // must await
         headless: true,              // true or false
     });
 
