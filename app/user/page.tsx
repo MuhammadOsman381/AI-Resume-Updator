@@ -14,27 +14,73 @@ import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import useGetAndDelete from "@/hooks/useGetAndDelete";
 import SpinnerLoader from "@/components/SpinnerLoader";
 import { useRouter } from "next/navigation";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Trash2, Plus } from "lucide-react"
+import { set } from "zod";
 
 interface UploadCV {
     title: string;
     file: File | null;
 }
 
+type Project = {
+    title: string
+    description: string
+    link: string
+}
+
+type Education = {
+    degree: string
+    institute: string
+    year: string
+}
+
+type Experience = {
+    title: string
+    company?: string
+    description: string
+}
+
+export type CVFormData = {
+    name: string
+    position: string
+    summary: string
+    links: string[]
+    tech_stack: string[]
+    projects: Project[]
+    education: Education[]
+    experience: Experience[]
+}
+
+
+
 export default function Home() {
     const defaultUploadCV = { title: "", file: null };
+
+    const [form, setForm] = useState<CVFormData>({
+        name: "",
+        position: "",
+        summary: "",
+        links: [""],
+        tech_stack: [""],
+        projects: [{ title: "", description: "", link: "" }],
+        education: [{ degree: "", institute: "", year: "" }],
+        experience: [{ title: "", company: "", description: "" }],
+    })
+
     const [step, setStep] = useState(1);
     const [template, setTemplate] = useState("");
     const [uploadCV, setUploadCV] = useState<UploadCV>(defaultUploadCV);
     const [cvID, setCVID] = useState("");
     const [userCVs, setUserCVs] = useState<any[]>([]);
     const [loader, setLoader] = useState<boolean>(false);
+    const [title, setTitle] = useState<string>("");
 
     const router = useRouter();
 
     const postCV = usePostAndPut(axios.post);
-    const jobDescription = usePostAndPut(axios.post);
     const getUserCVsHook = useGetAndDelete(axios.get);
-    const downloadCVHook = useGetAndDelete(axios.get);
 
     const [text, setText] = useState("");
 
@@ -46,6 +92,7 @@ export default function Home() {
         if (response && response.status === "ok") {
             setCVID(response.userCV.insertId);
             setStep(2);
+            await fetchUserCVs();
         }
     };
 
@@ -116,7 +163,6 @@ export default function Home() {
             a.download = `cv-${cvID}-${template}.pdf`;
             document.body.appendChild(a);
             a.click();
-
             a.remove();
             window.URL.revokeObjectURL(url);
             setLoader(false);
@@ -125,6 +171,96 @@ export default function Home() {
             setLoader(false);
         }
     };
+
+
+    const updateField = <K extends keyof CVFormData>(
+        field: K,
+        value: CVFormData[K]
+    ) => {
+        setForm((prev) => ({
+            ...prev,
+            [field]: value,
+        }))
+    }
+
+    const updateArrayField = <K extends keyof CVFormData>(
+        field: K,
+        index: number,
+        value: CVFormData[K] extends Array<infer U> ? U : never
+    ) => {
+        setForm((prev) => {
+            const updated = [...(prev[field] as any[])]
+            updated[index] = value
+            return { ...prev, [field]: updated }
+        })
+    }
+
+    const updateObjectArrayField = <
+        K extends keyof CVFormData,
+        T extends Record<string, any>,
+        P extends keyof T
+    >(
+        field: K,
+        index: number,
+        key: P,
+        value: T[P]
+    ) => {
+        setForm((prev) => {
+            const updated = [...(prev[field] as any)]
+            updated[index] = {
+                ...updated[index],
+                [key]: value,
+            }
+            return { ...prev, [field]: updated }
+        })
+    }
+
+
+    const addItem = <K extends keyof CVFormData>(
+        field: K,
+        emptyItem: CVFormData[K] extends Array<infer U> ? U : never
+    ) => {
+        setForm((prev) => ({
+            ...prev,
+            [field]: [...(prev[field] as any[]), emptyItem],
+        }))
+    }
+
+    const removeItem = <K extends keyof CVFormData>(
+        field: K,
+        index: number
+    ) => {
+        setForm((prev) => ({
+            ...prev,
+            [field]: (prev[field] as any[]).filter((_, i) => i !== index),
+        }))
+    }
+
+    const handleSubmit = () => {
+        postCV.callApi(`form/cv`, { title, json: form }, true, false, true)
+            .then(async (response) => {
+                if (response && response.status === "ok") {
+                    setCVID(response.userCV.insertId);
+                    setStep(2);
+                    await fetchUserCVs();
+                }
+            }).catch((error) => {
+                console.error("Error submitting form:", error);
+            });
+    }
+
+    const handleStringCVSubmit = async () => {
+        postCV.callApi(`string/cv`, { title, cvString: text }, true, false, true)
+            .then(async (response) => {
+                if (response && response.status === "ok") {
+                    setCVID(response.userCV.insertId);
+                    setStep(2);
+                    await fetchUserCVs();
+                }
+            }).catch((error) => {
+                console.error("Error submitting text CV:", error);
+            });
+    }
 
 
     useEffect(() => {
@@ -143,49 +279,390 @@ export default function Home() {
     if (step === 1) {
         return (
             <SidebarProvider>
-                <div className="w-full h-screen flex flex-col bg-gray-50">
+                <div className="w-full h-full flex flex-col ">
                     <div className="flex flex-1 overflow-hidden">
-                        <AppSidebar userCVs={userCVs} cvID={cvID} setCVID={setCVID} setStep={setStep} />
+                        <AppSidebar userCVs={userCVs} cvID={cvID} setCVID={setCVID} setStep={setStep} loading={getUserCVsHook.loading} />
+
                         <SidebarInset>
                             <NavBar />
-                            <div className="flex flex-1 flex-col gap-4 p-4 overflow-auto">
-                                <div className="w-full h-full p-4">
-                                    <div className="grid border rounded-xl p-4 w-full bg-white gap-3">
-                                        <div className="flex flex-col gap-2">
-                                            <Label>Enter title</Label>
-                                            <Input
-                                                type="text"
-                                                onChange={(e) =>
-                                                    setUploadCV({ ...uploadCV, title: e.target.value })
-                                                }
-                                            />
-                                            <Label>Upload your CV/Resume</Label>
-                                            <Input
-                                                type="file"
-                                                accept="application/pdf"
-                                                onChange={(e) => {
-                                                    if (!e.target.files) return;
-                                                    setUploadCV({ ...uploadCV, file: e.target.files[0] });
-                                                }}
-                                            />
-                                            <div>
-                                                <Button
-                                                    disabled={!uploadCV.title || !uploadCV.file || postCV.loading}
-                                                    size="sm"
-                                                    onClick={handleUploadSubmit}>
-                                                    {
-                                                        postCV.loading ?
-                                                            <span className="flex  items-center justify-center gap-1">
-                                                                Uploading <SpinnerLoader size="5" color="white" />
-                                                            </span>
-                                                            : "Submit CV "
-                                                    }
-                                                </Button>
+                            <Tabs defaultValue="cv" className="p-4 w-full bg-gray-50">
+                                <TabsList className="w-full" >
+                                    <TabsTrigger value="cv">Upload CV</TabsTrigger>
+                                    <TabsTrigger value="form">Build CV (Form)</TabsTrigger>
+                                    <TabsTrigger value="string">Build CV (Text)</TabsTrigger>
+
+                                </TabsList>
+
+                                <TabsContent value="cv" className="" >
+                                    <div className="flex flex-1 flex-col  gap-4  overflow-auto">
+                                        <div className="w-full h-full  ">
+                                            <div className="grid border rounded-xl p-4 w-full bg-white gap-3">
+                                                <div className="flex flex-col gap-2">
+                                                    <Label>Enter title</Label>
+                                                    <Input
+                                                        type="text"
+                                                        onChange={(e) =>
+                                                            setUploadCV({ ...uploadCV, title: e.target.value })
+                                                        }
+                                                    />
+                                                    <Label>Upload your CV/Resume</Label>
+                                                    <Input
+                                                        type="file"
+                                                        accept="application/pdf"
+                                                        onChange={(e) => {
+                                                            if (!e.target.files) return;
+                                                            setUploadCV({ ...uploadCV, file: e.target.files[0] });
+                                                        }}
+                                                    />
+                                                    <div>
+                                                        <Button
+                                                            disabled={!uploadCV.title || !uploadCV.file || postCV.loading}
+                                                            size="sm"
+                                                            onClick={handleUploadSubmit}>
+                                                            {
+                                                                postCV.loading ?
+                                                                    <span className="flex  items-center justify-center gap-1">
+                                                                        Uploading <SpinnerLoader size="5" color="white" />
+                                                                    </span>
+                                                                    : "Submit CV "
+                                                            }
+                                                        </Button>
+                                                    </div>
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
-                                </div>
-                            </div>
+                                </TabsContent>
+
+                                <TabsContent value="form" className="w-full h-full overflow-scroll">
+                                    <div className="w-full mx-auto overflow-scroll space-y-3">
+
+                                        <Card className="shadow-none">
+                                            <CardContent className="space-y-4">
+                                                <div>
+                                                    <Label>Title</Label>
+                                                    <Input
+                                                        value={title}
+                                                        onChange={(e) => setTitle(e.target.value)}
+                                                    />
+                                                </div>
+                                            </CardContent>
+                                        </Card>
+
+
+                                        {/* Basic Info */}
+                                        <Card className="shadow-none" >
+                                            <CardHeader>
+                                                <CardTitle>Basic Information</CardTitle>
+                                            </CardHeader>
+                                            <CardContent className="space-y-4">
+                                                <div>
+                                                    <Label>Name</Label>
+                                                    <Input
+                                                        value={form.name}
+                                                        onChange={(e) => updateField("name", e.target.value)}
+                                                    />
+                                                </div>
+
+                                                <div>
+                                                    <Label>Position</Label>
+                                                    <Input
+                                                        value={form.position}
+                                                        onChange={(e) => updateField("position", e.target.value)}
+                                                    />
+                                                </div>
+
+                                                <div>
+                                                    <Label>Summary</Label>
+                                                    <Textarea
+                                                        value={form.summary}
+                                                        onChange={(e) => updateField("summary", e.target.value)}
+                                                    />
+                                                </div>
+                                            </CardContent>
+                                        </Card>
+
+                                        {/* Links */}
+                                        <Card className="shadow-none" >
+                                            <CardHeader>
+                                                <CardTitle>Links</CardTitle>
+                                            </CardHeader>
+                                            <CardContent className="space-y-4">
+                                                {form.links.map((link, i) => (
+                                                    <div key={i} className="flex gap-2">
+                                                        <Input
+                                                            placeholder="https://..."
+                                                            value={link}
+                                                            onChange={(e) =>
+                                                                updateArrayField("links", i, e.target.value)
+                                                            }
+                                                        />
+                                                        {form.links.length > 1 && (
+                                                            <Button
+                                                                size="icon"
+                                                                variant="destructive"
+                                                                onClick={() => removeItem("links", i)}
+                                                            >
+                                                                <Trash2 size={16} />
+                                                            </Button>
+                                                        )}
+                                                    </div>
+                                                ))}
+                                                <Button
+                                                    variant="outline"
+                                                    size="sm"
+                                                    onClick={() => addItem("links", "")}
+                                                >
+                                                    <Plus size={16} /> Add Link
+                                                </Button>
+                                            </CardContent>
+                                        </Card>
+
+                                        {/* Tech Stack */}
+                                        <Card className="shadow-none" >
+                                            <CardHeader>
+                                                <CardTitle>Tech Stack</CardTitle>
+                                            </CardHeader>
+                                            <CardContent className="space-y-4">
+                                                {form.tech_stack.map((tech, i) => (
+                                                    <div key={i} className="flex gap-2">
+                                                        <Input
+                                                            placeholder="React, Node, Python..."
+                                                            value={tech}
+                                                            onChange={(e) =>
+                                                                updateArrayField("tech_stack", i, e.target.value)
+                                                            }
+                                                        />
+                                                        {form.tech_stack.length > 1 && (
+                                                            <Button
+                                                                size="icon"
+                                                                variant="destructive"
+                                                                onClick={() => removeItem("tech_stack", i)}
+                                                            >
+                                                                <Trash2 size={16} />
+                                                            </Button>
+                                                        )}
+                                                    </div>
+                                                ))}
+                                                <Button
+                                                    variant="outline"
+                                                    size="sm"
+                                                    onClick={() => addItem("tech_stack", "")}
+                                                >
+                                                    <Plus size={16} /> Add Skill
+                                                </Button>
+                                            </CardContent>
+                                        </Card>
+
+                                        {/* Projects */}
+                                        <Card className="shadow-none" >
+                                            <CardHeader>
+                                                <CardTitle>Projects</CardTitle>
+                                            </CardHeader>
+                                            <CardContent className="space-y-6">
+                                                {form.projects.map((project, i) => (
+                                                    <div key={i} className="border p-4 rounded-lg space-y-3">
+                                                        <Input
+                                                            placeholder="Project Title"
+                                                            value={project.title}
+                                                            onChange={(e) =>
+                                                                updateObjectArrayField("projects", i, "title", e.target.value)
+                                                            }
+                                                        />
+                                                        <Textarea
+                                                            placeholder="Description"
+                                                            value={project.description}
+                                                            onChange={(e) =>
+                                                                updateObjectArrayField("projects", i, "description", e.target.value)
+                                                            }
+                                                        />
+                                                        <Input
+                                                            placeholder="Project Link"
+                                                            value={project.link}
+                                                            onChange={(e) =>
+                                                                updateObjectArrayField("projects", i, "link", e.target.value)
+                                                            }
+                                                        />
+
+                                                        {form.projects.length > 1 && (
+                                                            <Button
+                                                                variant="destructive"
+                                                                size="sm"
+                                                                onClick={() => removeItem("projects", i)}
+                                                            >
+                                                                <Trash2 size={16} /> Remove Project
+                                                            </Button>
+                                                        )}
+                                                    </div>
+                                                ))}
+
+                                                <Button
+                                                    variant="outline"
+                                                    onClick={() =>
+                                                        addItem("projects", { title: "", description: "", link: "" })
+                                                    }
+                                                >
+                                                    <Plus size={16} /> Add Project
+                                                </Button>
+                                            </CardContent>
+                                        </Card>
+
+                                        {/* Education */}
+                                        <Card className="shadow-none">
+                                            <CardHeader>
+                                                <CardTitle>Education</CardTitle>
+                                            </CardHeader>
+                                            <CardContent className="space-y-6">
+                                                {form.education.map((edu, i) => (
+                                                    <div key={i} className="border p-4 rounded-lg space-y-3">
+                                                        <Input
+                                                            placeholder="Degree"
+                                                            value={edu.degree}
+                                                            onChange={(e) =>
+                                                                updateObjectArrayField("education", i, "degree", e.target.value)
+                                                            }
+                                                        />
+                                                        <Input
+                                                            placeholder="Institute"
+                                                            value={edu.institute}
+                                                            onChange={(e) =>
+                                                                updateObjectArrayField("education", i, "institute", e.target.value)
+                                                            }
+                                                        />
+                                                        <Input
+                                                            placeholder="Year"
+                                                            value={edu.year}
+                                                            onChange={(e) =>
+                                                                updateObjectArrayField("education", i, "year", e.target.value)
+                                                            }
+                                                        />
+
+                                                        {form.education.length > 1 && (
+                                                            <Button
+                                                                variant="destructive"
+                                                                size="sm"
+                                                                onClick={() => removeItem("education", i)}
+                                                            >
+                                                                <Trash2 size={16} /> Remove
+                                                            </Button>
+                                                        )}
+                                                    </div>
+                                                ))}
+
+                                                <Button
+                                                    variant="outline"
+                                                    onClick={() =>
+                                                        addItem("education", { degree: "", institute: "", year: "" })
+                                                    }
+                                                >
+                                                    <Plus size={16} /> Add Education
+                                                </Button>
+                                            </CardContent>
+                                        </Card>
+
+                                        {/* Experience */}
+                                        <Card className="shadow-none" >
+                                            <CardHeader>
+                                                <CardTitle>Experience</CardTitle>
+                                            </CardHeader>
+                                            <CardContent className="space-y-6">
+                                                {form.experience.map((exp, i) => (
+                                                    <div key={i} className="border p-4 rounded-lg space-y-3">
+                                                        <Input
+                                                            placeholder="Title"
+                                                            value={exp.title}
+                                                            onChange={(e) =>
+                                                                updateObjectArrayField("experience", i, "title", e.target.value)
+                                                            }
+                                                        />
+                                                        <Input
+                                                            placeholder="Company (optional)"
+                                                            value={exp.company}
+                                                            onChange={(e) =>
+                                                                updateObjectArrayField("experience", i, "company", e.target.value)
+                                                            }
+                                                        />
+                                                        <Textarea
+                                                            placeholder="Description"
+                                                            value={exp.description}
+                                                            onChange={(e) =>
+                                                                updateObjectArrayField("experience", i, "description", e.target.value)
+                                                            }
+                                                        />
+
+                                                        {form.experience.length > 1 && (
+                                                            <Button
+                                                                variant="destructive"
+                                                                size="sm"
+                                                                onClick={() => removeItem("experience", i)}
+                                                            >
+                                                                <Trash2 size={16} /> Remove
+                                                            </Button>
+                                                        )}
+                                                    </div>
+                                                ))}
+
+                                                <Button
+                                                    variant="outline"
+                                                    onClick={() =>
+                                                        addItem("experience", { title: "", company: "", description: "" })
+                                                    }
+                                                >
+                                                    <Plus size={16} /> Add Experience
+                                                </Button>
+                                            </CardContent>
+                                        </Card>
+
+                                        {/* Submit */}
+                                        <Button className="w-full" onClick={handleSubmit}>
+                                            Save CV
+                                        </Button>
+                                    </div>
+
+                                </TabsContent>
+
+                                <TabsContent value="string" className="w-full h-full overflow-scroll">
+                                    <div className="w-full mx-auto overflow-scroll space-y-3">
+                                        <Card className="shadow-none">
+                                            <CardContent className="space-y-2">
+                                                <div className="space-y-1" >
+                                                    <Label>Title</Label>
+                                                    <Input
+                                                        value={title}
+                                                        onChange={(e) => setTitle(e.target.value)}
+                                                    />
+                                                </div>
+                                                <div className="space-y-1" >
+                                                    <Label>Paste CV Text</Label>
+                                                    <Textarea
+                                                        rows={20}
+                                                        className="resize-none overflow-auto w-full"
+                                                        onChange={(e) => setText(e.target.value)}
+                                                        value={text}
+                                                    />
+                                                </div>
+                                                <div>
+                                                    <Button
+                                                        disabled={!title || !text || postCV.loading}
+                                                        size="sm"
+                                                        onClick={handleStringCVSubmit}>
+                                                        {
+                                                            postCV.loading ?
+                                                                <span className="flex  items-center justify-center gap-1">
+                                                                    Submitting <SpinnerLoader size="5" color="white" />
+                                                                </span>
+                                                                : "Submit CV "
+                                                        }
+                                                    </Button>
+                                                </div>
+                                            </CardContent>
+                                        </Card>
+
+                                    </div>
+                                </TabsContent>
+
+                            </Tabs>
+
                         </SidebarInset>
                     </div>
                 </div>
@@ -264,9 +741,9 @@ export default function Home() {
                         />
                         <div className="flex">
 
-                            <Button 
-                            size="sm"
-                            disabled={loader || !text} onClick={handleFinalSubmit}>
+                            <Button
+                                size="sm"
+                                disabled={loader || !text} onClick={handleFinalSubmit}>
                                 {
                                     loader ?
                                         <span className="flex  items-center justify-center gap-1">

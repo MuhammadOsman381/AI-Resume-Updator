@@ -3,13 +3,16 @@ import { db } from "@/db";
 import { cvs } from "@/db/schema";
 import { eq, and } from "drizzle-orm";
 import { decodeToken } from "@/services/JwtService";
-import puppeteer from "puppeteer-core";
+
+import puppeteerCore from "puppeteer-core";
+import puppeteer from "puppeteer"; // ONLY used locally
+
 import chromium from "@sparticuz/chromium-min";
 import ejs from "ejs";
 import path from "path";
 
 const remoteExecutablePath =
- "https://github.com/Sparticuz/chromium/releases/download/v121.0.0/chromium-v121.0.0-pack.tar";
+    "https://github.com/Sparticuz/chromium/releases/download/v121.0.0/chromium-v121.0.0-pack.tar";
 
 export async function GET(req: Request) {
     const authHeader = req.headers.get("authorization");
@@ -57,11 +60,21 @@ export async function GET(req: Request) {
     });
 
 
-    const browser = await puppeteer.launch({
-        args: chromium.args,
-        executablePath: await chromium.executablePath(remoteExecutablePath), // must await
-        headless: true,              // true or false
-    });
+    let browser;
+
+    if (process.env.PUPPETEER === "local") {
+        browser = await puppeteer.launch({
+            headless: true,
+        })
+    }
+    else {
+        browser = await puppeteerCore.launch({
+            args: chromium.args,
+            executablePath: await chromium.executablePath(remoteExecutablePath), // must await
+            headless: true,              // true or false
+        });
+    }
+
 
     const page = await browser.newPage();
     await page.setContent(html, { waitUntil: "networkidle0" });

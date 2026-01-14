@@ -4,10 +4,16 @@ import { db } from "@/db";
 import { cvs } from "@/db/schema";
 import { eq, and } from "drizzle-orm";
 import { GenerateImprovedCV } from "@/services/LangchainService";
-import puppeteer from "puppeteer-core";
 import chromium from "@sparticuz/chromium";
 import ejs from "ejs";
 import path from "path";
+
+import puppeteerCore from "puppeteer-core";
+import puppeteer from "puppeteer"; // ONLY used locally
+
+const remoteExecutablePath =
+    "https://github.com/Sparticuz/chromium/releases/download/v121.0.0/chromium-v121.0.0-pack.tar";
+
 
 export async function POST(req: Request) {
     const authHeader = req.headers.get("authorization");
@@ -63,11 +69,20 @@ export async function POST(req: Request) {
         education: improvedCVJSON.education,
     });
 
-    const browser = await puppeteer.launch({
-        args: chromium.args,
-        executablePath: await chromium.executablePath(), // must await
-        headless: true,              // true or false
-    });
+    let browser;
+     if (process.env.PUPPETEER === "local") {
+        browser = await puppeteer.launch({
+            headless: true,
+        })
+    }
+    else {
+        browser = await puppeteerCore.launch({
+            args: chromium.args,
+            executablePath: await chromium.executablePath(remoteExecutablePath), // must await
+            headless: true,              // true or false
+        });
+    }
+
 
     const page = await browser.newPage();
     await page.setContent(html, { waitUntil: "networkidle0" });

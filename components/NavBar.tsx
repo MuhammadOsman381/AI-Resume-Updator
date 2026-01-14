@@ -45,11 +45,12 @@ const NavBar = () => {
 
     return (
         <nav className="flex w-full items-center justify-between px-6 py-1 bg-zinc-50 border-b">
+            
             <div
-                className="text-xl font-bold text-gray-800 cursor-pointer"
+                className="text-[19px] font-bold text-gray-800 cursor-pointer"
                 onClick={() => router.push("/")}
             >
-                Resume Updator
+                Resume Enhancer
             </div>
 
             {user && (

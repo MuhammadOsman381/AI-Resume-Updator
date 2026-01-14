@@ -19,16 +19,18 @@ interface CV {
   id: string;
   title: string;
   createdAt: string;
+  cvJson: any;
 }
 
 interface AppSidebarProps extends React.ComponentProps<typeof Sidebar> {
   userCVs?: CV[];
   cvID: string;
+  loading: boolean;
   setCVID: React.Dispatch<React.SetStateAction<string>>;
   setStep: React.Dispatch<React.SetStateAction<number>>;
 }
 
-export function AppSidebar({ userCVs = [], cvID, setCVID, setStep, ...props }: AppSidebarProps) {
+export function AppSidebar({ userCVs = [], cvID, setCVID, setStep,loading, ...props }: AppSidebarProps) {
   const navMain = userCVs.map((cv) => ({
     title: cv.title,
     url: "#",
@@ -37,6 +39,7 @@ export function AppSidebar({ userCVs = [], cvID, setCVID, setStep, ...props }: A
         title: "Edit",
         url: `#cv-${cv.id}`,
         id: cv.id,
+        cvJson:cv.cvJson
       },
     ],
   }));
@@ -61,8 +64,12 @@ export function AppSidebar({ userCVs = [], cvID, setCVID, setStep, ...props }: A
       </SidebarHeader>
       <SidebarContent>
         {
+          loading ? 
+          <SpinnerLoader size="7" color="black" /> :
           userCVs.length === 0 ? (
-            <SpinnerLoader size="7" color="black" />
+            <i className="text-sm w-full text-center text-gray-400" >
+              No User CVs Found
+            </i>
           ) :
             <NavMain items={navMain} setCVID={setCVID} setStep={setStep} />
         }
