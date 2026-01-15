@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8" />
+  <title><%= name || "Resume" %></title>
+
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <style>
+    @page {
+      size: A4;
+      margin: 10mm;
+    }
+  </style>
+</head>
+
+<body class="font-sans text-[11.5px] text-gray-700 leading-relaxed">
+
+  <!-- Header -->
+  <header class="mb-4">
+    <% if (name) { %>
+      <h1 class="text-[22px] font-bold text-blue-700">
+        <%= name %>
+      </h1>
+    <% } %>
+
+    <% if (position) { %>
+      <div class="text-[13px] font-semibold text-gray-800">
+        <%= position %>
+      </div>
+    <% } %>
+
+    <% if (links && links.length > 0) { %>
+      <div class="text-[10.5px] mt-1 text-gray-600">
+        <%= links.filter(Boolean).join(" | ") %>
+      </div>
+    <% } %>
+  </header>
+
+  <hr class="border-gray-300 mb-4" />
+
+  <!-- Summary -->
+  <% if (summary) { %>
+    <section class="mb-4">
+      <h2 class="text-[13px] font-bold text-blue-700 uppercase mb-1">
+        Professional Summary
+      </h2>
+      <p>
+        <%= summary %>
+      </p>
+    </section>
+  <% } %>
+
+  <!-- Skills -->
+  <% if (tech_stack && tech_stack.length > 0) { %>
+    <section class="mb-4">
+      <h2 class="text-[13px] font-bold text-blue-700 uppercase mb-1">
+        Technical Skills
+      </h2>
+      <p class="text-[11px]">
+        <%= tech_stack.join(", ") %>
+      </p>
+    </section>
+  <% } %>
+
+  <!-- Experience -->
+  <% if (experience && experience.length > 0) { %>
+    <section class="mb-4">
+      <h2 class="text-[13px] font-bold text-blue-700 uppercase mb-2">
+        Work Experience
+      </h2>
+
+      <% experience.forEach(exp => { %>
+        <% if (exp.title || exp.company || exp.description) { %>
+          <div class="mb-3">
+            <div class="font-semibold text-gray-900">
+              <%= exp.title || "" %>
+              <% if (exp.company) { %>
+                <span class="font-normal text-gray-600">
+                  — <%= exp.company %>
+                </span>
+              <% } %>
+            </div>
+
+            <% if (exp.description) { %>
+              <div class="mt-1">
+                <%= exp.description %>
+              </div>
+            <% } %>
+          </div>
+        <% } %>
+      <% }) %>
+    </section>
+  <% } %>
+
+  <!-- Projects -->
+  <% if (projects && projects.length > 0) { %>
+    <section class="mb-4">
+      <h2 class="text-[13px] font-bold text-blue-700 uppercase mb-2">
+        Projects
+      </h2>
+
+      <% projects.forEach(project => { %>
+        <% if (project.title || project.description) { %>
+          <div class="mb-3">
+            <% if (project.title) { %>
+              <div class="font-semibold text-gray-900">
+                <%= project.title %>
+              </div>
+            <% } %>
+
+            <% if (project.description) { %>
+              <div class="mt-1">
+                <%= project.description %>
+              </div>
+            <% } %>
+
+            <% if (project.link) { %>
+              <div class="text-[10.5px] text-blue-700">
+                <%= project.link %>
+              </div>
+            <% } %>
+          </div>
+        <% } %>
+      <% }) %>
+    </section>
+  <% } %>
+
+  <!-- Education -->
+  <% if (education && education.length > 0) { %>
+    <section>
+      <h2 class="text-[13px] font-bold text-blue-700 uppercase mb-2">
+        Education
+      </h2>
+
+      <% education.forEach(edu => { %>
+        <% if (edu.institute || edu.degree || edu.year) { %>
+          <div class="mb-3">
+            <% if (edu.institute) { %>
+              <div class="font-semibold text-gray-900">
+                <%= edu.institute %>
+              </div>
+            <% } %>
+
+            <% if (edu.degree) { %>
+              <div class="italic text-[10.5px] text-gray-600">
+                <%= edu.degree %>
+              </div>
+            <% } %>
+
+            <% if (edu.year) { %>
+              <div class="text-[10.5px] text-gray-500">
+                <%= edu.year %>
+              </div>
+            <% } %>
+          </div>
+        <% } %>
+      <% }) %>
+    </section>
+  <% } %>
+
+</body>
+</html>

@@ -7,8 +7,9 @@ import { useEffect, useState } from "react";
 import useGetAndDelete from "@/hooks/useGetAndDelete";
 import axios from "axios";
 import Image from "next/image";
+import { SidebarTrigger } from "./ui/sidebar";
 
-const NavBar = () => {
+const NavBar = ({ showSideBarTrigger, loginPage }: { showSideBarTrigger: boolean, loginPage?: boolean }) => {
     const { data: session } = useSession();
     const router = useRouter();
 
@@ -44,16 +45,18 @@ const NavBar = () => {
     }, []);
 
     return (
-        <nav className="flex w-full items-center justify-between px-6 py-1 bg-zinc-50 border-b">
-            
-            <div
-                className="text-[19px] font-bold text-gray-800 cursor-pointer"
-                onClick={() => router.push("/")}
-            >
-                Resume Enhancer
+                <nav className="flex w-full items-center justify-between px-6 py-1 h-16  bg-zinc-50 border-b">
+        <div className="flex items-center justify-center" >
+                {showSideBarTrigger && <SidebarTrigger />}
+                <div
+                    className="text-[19px] font-bold text-gray-800 cursor-pointer"
+                    onClick={() => router.push("/")}
+                >
+                    Resume Enhancer
+                </div>
             </div>
 
-            {user && (
+            {user && !loginPage && (
                 <div className="relative">
                     <div
                         onClick={() => setOpen(!open)}

@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { MoreHorizontal, type LucideIcon } from "lucide-react"
+import { Key, MoreHorizontal, type LucideIcon } from "lucide-react"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -28,11 +28,13 @@ import { Button } from "@/components/ui/button"
 import usePostAndPut from "@/hooks/usePostAndPut"
 import axios from "axios"
 import SpinnerLoader from "./SpinnerLoader"
+import useGetAndDelete from "@/hooks/useGetAndDelete"
 
 export function NavMain({
   items,
   setCVID,
   setStep,
+  fetchUserCVs
 }: {
   items: {
     title: string
@@ -48,6 +50,7 @@ export function NavMain({
   }[]
   setCVID: React.Dispatch<React.SetStateAction<string>>
   setStep: React.Dispatch<React.SetStateAction<number>>
+  fetchUserCVs: () => void
 }) {
   const { isMobile } = useSidebar()
 
@@ -55,6 +58,7 @@ export function NavMain({
   const [id, setId] = useState<string>("")
 
   const edit = usePostAndPut(axios.put)
+  const deleteCV = useGetAndDelete(axios.delete)
 
   // form state
   const [form, setForm] = useState<any>({
@@ -123,7 +127,8 @@ export function NavMain({
             </SidebarMenuButton>
 
             {item.items?.length ? (
-              <DropdownMenu>
+              <DropdownMenu
+              >
                 <DropdownMenuTrigger asChild>
                   <button
                     className="p-2 hover:bg-gray-100 rounded"
@@ -139,40 +144,58 @@ export function NavMain({
                   className="min-w-56 rounded-lg"
                 >
                   {item.items.map((sub) => (
-                    <DropdownMenuItem
+                    <div
                       key={sub.id}
-                      onClick={(e) => {
-                        e.preventDefault()
-                        e.stopPropagation()
-
-                        // set cvJson into form
-                        const cv = sub.cvJson
-                        if (!cv) return
-                        setForm({
-                          name: cv.name || "",
-                          position: cv.position || "",
-                          links: cv.links?.length ? cv.links : [""],
-                          summary: cv.summary || "",
-                          tech_stack: cv.tech_stack?.length ? cv.tech_stack : [""],
-                          projects:
-                            cv.projects?.length > 0
-                              ? cv.projects
-                              : [{ title: "", description: "", link: "" }],
-                          education:
-                            cv.education?.length > 0
-                              ? cv.education
-                              : [{ degree: "", institute: "", year: "" }],
-                          experience:
-                            cv.experience?.length > 0
-                              ? cv.experience
-                              : [{ title: "", company: "", description: "" }],
-                        })
-                        setId(sub.id)
-                        setEditDialogOpen(true)
-                      }}
                     >
-                      Edit
-                    </DropdownMenuItem>
+                      <DropdownMenuItem
+                        key={sub.id}
+                        onClick={(e) => {
+                          e.preventDefault()
+                          e.stopPropagation()
+                          const cv = sub.cvJson
+                          if (!cv) return
+                          setForm({
+                            name: cv.name || "",
+                            position: cv.position || "",
+                            links: cv.links?.length ? cv.links : [""],
+                            summary: cv.summary || "",
+                            tech_stack: cv.tech_stack?.length ? cv.tech_stack : [""],
+                            projects:
+                              cv.projects?.length > 0
+                                ? cv.projects
+                                : [{ title: "", description: "", link: "" }],
+                            education:
+                              cv.education?.length > 0
+                                ? cv.education
+                                : [{ degree: "", institute: "", year: "" }],
+                            experience:
+                              cv.experience?.length > 0
+                                ? cv.experience
+                                : [{ title: "", company: "", description: "" }],
+                          })
+                          setId(sub.id)
+                          setEditDialogOpen(true)
+                        }}
+                      >
+                        Edit
+                      </DropdownMenuItem>
+                      <DropdownMenuItem variant="destructive"
+                        onClick={(e) => {
+                          e.preventDefault()
+                          e.stopPropagation()
+                          deleteCV.callApi(`delete/cv/${sub.id}`, true, false)
+                            .then(async (res) => {
+                              console.log(res)
+                              await fetchUserCVs()
+                            })
+                            .catch((err) => {
+                              console.error(err)
+                            })
+                        }}
+                      >
+                        Delete
+                      </DropdownMenuItem>
+                    </div>
                   ))}
                 </DropdownMenuContent>
               </DropdownMenu>
@@ -422,19 +445,18 @@ export function NavMain({
               disabled={edit.loading}
             >
               {
-                edit.loading ? 
-                <div className="flex items-center justify-center text-center gap-1.5" >
-                  Please wait 
-                  <SpinnerLoader size="2" color="black"/>
-                </div>:
-                "Save Changes"
+                edit.loading ?
+                  <div className="flex items-center justify-center text-center gap-1.5" >
+                    Please wait
+                    <SpinnerLoader size="2" color="black" />
+                  </div> :
+                  "Save Changes"
               }
-              </Button>
+            </Button>
           </ScrollArea>
         </DialogContent>
       </Dialog>
 
-      {/* ================================================= */}
     </SidebarGroup>
   )
 }

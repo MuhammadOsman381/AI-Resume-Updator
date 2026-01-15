@@ -28,9 +28,10 @@ interface AppSidebarProps extends React.ComponentProps<typeof Sidebar> {
   loading: boolean;
   setCVID: React.Dispatch<React.SetStateAction<string>>;
   setStep: React.Dispatch<React.SetStateAction<number>>;
+  fetchUserCVs: () => void;
 }
 
-export function AppSidebar({ userCVs = [], cvID, setCVID, setStep,loading, ...props }: AppSidebarProps) {
+export function AppSidebar({ userCVs = [], cvID, setCVID, setStep,loading,fetchUserCVs, ...props }: AppSidebarProps) {
   const navMain = userCVs.map((cv) => ({
     title: cv.title,
     url: "#",
@@ -71,10 +72,9 @@ export function AppSidebar({ userCVs = [], cvID, setCVID, setStep,loading, ...pr
               No User CVs Found
             </i>
           ) :
-            <NavMain items={navMain} setCVID={setCVID} setStep={setStep} />
+            <NavMain items={navMain} fetchUserCVs={fetchUserCVs}  setCVID={setCVID} setStep={setStep} />
         }
-
-
+        
       </SidebarContent>
       {/* <SidebarFooter>
         <div className="p-1">

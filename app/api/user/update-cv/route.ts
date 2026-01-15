@@ -51,59 +51,57 @@ export async function POST(req: Request) {
 
     const improvedCVJSON = await GenerateImprovedCV(cv[0].cvJson, jobDescription);
 
-    const templatePath = path.join(
-        process.cwd(),
-        "templates",
-        "cv",
-        `${template}.ejs`
-    );
+    // const templatePath = path.join(
+    //     process.cwd(),
+    //     "templates",
+    //     "cv",
+    //     `${template}.ejs`
+    // );
 
-    const html = await ejs.renderFile(templatePath, {
-        name: improvedCVJSON.name,
-        position: improvedCVJSON.position,
-        links: improvedCVJSON.links,
-        summary: improvedCVJSON.summary,
-        tech_stack: improvedCVJSON.tech_stack,
-        experience: improvedCVJSON.experience,
-        projects: improvedCVJSON.projects,
-        education: improvedCVJSON.education,
-    });
+    // const html = await ejs.renderFile(templatePath, {
+    //     name: improvedCVJSON.name,
+    //     position: improvedCVJSON.position,
+    //     links: improvedCVJSON.links,
+    //     summary: improvedCVJSON.summary,
+    //     tech_stack: improvedCVJSON.tech_stack,
+    //     experience: improvedCVJSON.experience,
+    //     projects: improvedCVJSON.projects,
+    //     education: improvedCVJSON.education,
+    // });
 
-    let browser;
-     if (process.env.PUPPETEER === "local") {
-        browser = await puppeteer.launch({
-            headless: true,
-        })
-    }
-    else {
-        browser = await puppeteerCore.launch({
-            args: chromium.args,
-            executablePath: await chromium.executablePath(remoteExecutablePath), // must await
-            headless: true,              // true or false
-        });
-    }
+    // let browser;
+    //  if (process.env.PUPPETEER === "local") {
+    //     browser = await puppeteer.launch({
+    //         headless: true,
+    //     })
+    // }
+    // else {
+    //     browser = await puppeteerCore.launch({
+    //         args: chromium.args,
+    //         executablePath: await chromium.executablePath(remoteExecutablePath), // must await
+    //         headless: true,              // true or false
+    //     });
+    // }
 
+    // const page = await browser.newPage();
+    // await page.setContent(html, { waitUntil: "networkidle0" });
 
-    const page = await browser.newPage();
-    await page.setContent(html, { waitUntil: "networkidle0" });
+    // const pdfBuffer: any = await page.pdf({
+    //     format: "A4",
+    //     printBackground: true,
+    //     margin: {
+    //         top: "20mm",
+    //         bottom: "20mm",
+    //         left: "20mm",
+    //         right: "20mm",
+    //     },
+    // });
 
-    const pdfBuffer: any = await page.pdf({
-        format: "A4",
-        printBackground: true,
-        margin: {
-            top: "20mm",
-            bottom: "20mm",
-            left: "20mm",
-            right: "20mm",
-        },
-    });
+    // await browser.close();
 
-    await browser.close();
-
-    return new Response(pdfBuffer, {
-        headers: {
-            "Content-Type": "application/pdf",
-            "Content-Disposition": `attachment; filename="${cv[0].title}-${template}.pdf"`,
-        },
+    return NextResponse.json({
+        status: "ok",
+        improvedCV: improvedCVJSON,
+        message: "CV/Resume enhanced successfully",
     });
 }
