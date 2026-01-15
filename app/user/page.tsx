@@ -103,12 +103,8 @@ export default function Home() {
         const formData = new FormData();
         formData.append("title", uploadCV.title);
         uploadCV.file && formData.append("file", uploadCV.file);
-        const response = await postCV.callApi("upload/cv", formData, true, true, true);
-        if (response && response.status === "ok") {
-            setCVID(response.userCV.insertId);
-            setStep(2);
-            await fetchUserCVs();
-        }
+        await postCV.callApi("upload/cv", formData, true, true, true);
+        await fetchUserCVs();
     };
 
     const handleFinalSubmit = async () => {
@@ -245,27 +241,25 @@ export default function Home() {
     const handleSubmit = () => {
         postCV.callApi(`form/cv`, { title, json: form }, true, false, true)
             .then(async (response) => {
-                if (response && response.status === "ok") {
-                    setCVID(response.userCV.insertId);
-                    setStep(2);
-                    await fetchUserCVs();
-                }
+                console.log("Form CV submitted, ID:", response);
             }).catch((error) => {
                 console.error("Error submitting form:", error);
-            });
+            })
+            .finally(async () => {
+                await fetchUserCVs();
+            })
     }
 
     const handleStringCVSubmit = async () => {
         postCV.callApi(`string/cv`, { title, cvString: text }, true, false, true)
             .then(async (response) => {
-                if (response && response.status === "ok") {
-                    setCVID(response.userCV.insertId);
-                    setStep(2);
-                    await fetchUserCVs();
-                }
+                console.log("Text CV submitted, ID:", response);
             }).catch((error) => {
                 console.error("Error submitting text CV:", error);
-            });
+            })
+            .finally(async () => {
+                await fetchUserCVs();
+            })
     }
 
     const downloadImprovedCV = async () => {
