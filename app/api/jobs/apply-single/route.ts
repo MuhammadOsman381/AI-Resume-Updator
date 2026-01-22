@@ -71,7 +71,7 @@ export async function POST(req: Request) {
       userId: user.id,
     },
     retries: 3,
-    timeout: "1000s" 
+    timeout: "300s" 
   });
 
   return NextResponse.json({

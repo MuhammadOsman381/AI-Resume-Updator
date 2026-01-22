@@ -2,7 +2,7 @@ import { verifySignatureAppRouter } from "@upstash/qstash/nextjs";
 import { processSingleApplication } from "@/services/Workers";
 
 export const runtime = "nodejs";
-export const maxDuration = 1000;
+export const maxDuration = 300;
 
 export const POST = verifySignatureAppRouter(
   async (req: Request) => {
