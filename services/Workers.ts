@@ -17,7 +17,7 @@ const remoteExecutablePath =
   "https://github.com/Sparticuz/chromium/releases/download/v121.0.0/chromium-v121.0.0-pack.tar";
 
 
-async function processSingleApplication(
+export async function processSingleApplication(
   body: { id: string; cvId: string; template: string },
   userId: string
 ) {
@@ -86,4 +86,5 @@ async function processSingleApplication(
   }
 
   await db.update(jobs).set({ status: "applied" }).where(eq(jobs.id, job[0].id));
+  console.log(`Job ${job[0].id} processed successfully.`);
 }

@@ -12,6 +12,8 @@ import puppeteer from "puppeteer";
 import { decodeToken } from "@/services/JwtService";
 import { sendEmail } from "@/services/NodeMailerService";
 
+import { processSingleApplication } from "@/services/Workers";
+
 export const runtime = "nodejs";
 export const maxDuration = 300; // 5 minutes
 
@@ -30,14 +32,12 @@ export async function POST(req: Request) {
   }
 
   // 🚀 Fire-and-forget
-  processApplication(body, user.id).catch(console.error);
+  processSingleApplication(body, user.id).catch(console.error);
 
   return NextResponse.json({
     status: "processing",
-    message: "Application started"
+    message: "Job applying process is started this may take a some minutes.",
   });
 }
-async function processApplication(body: any, id: string) {
-    throw new Error("Function not implemented.");
-}
+
 
