@@ -46,8 +46,6 @@ import { NextResponse } from "next/server";
 import { Client } from "@upstash/qstash";
 import { decodeToken } from "@/services/JwtService";
 
-export const runtime = "nodejs";
-
 const qstash = new Client({
   token: process.env.QSTASH_TOKEN!,
 });
@@ -73,6 +71,7 @@ export async function POST(req: Request) {
       userId: user.id,
     },
     retries: 3,
+    timeout: "1000s" 
   });
 
   return NextResponse.json({
