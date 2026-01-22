@@ -18,7 +18,7 @@ export async function POST(req: Request) {
 
   try {
     // Directly call the email worker API using axios
-    await axios.post(
+     axios.post(
       `${process.env.NEXT_PUBLIC_APP_URL}/api/workers/handle-send-email`,
       {
         email,
