@@ -21,7 +21,7 @@ export const POST = verifySignatureAppRouter(
     await qstash.publishJSON({
       url: `${process.env.NEXT_PUBLIC_APP_URL}/api/workers/handle-send-email`,
       body: {
-        payload: { email, job, pdfBuffer, userRecord },
+         email, job, pdfBuffer, userRecord,
       },
       retries: 3,
       timeout: "300s"

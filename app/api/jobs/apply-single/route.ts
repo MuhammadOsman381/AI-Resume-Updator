@@ -69,7 +69,7 @@ export async function POST(req: Request) {
   await qstash.publishJSON({
     url: `${process.env.NEXT_PUBLIC_APP_URL}/api/workers/generate-email`,
     body: {
-      payload: {userId, pdfBuffer, job, improvedCVJSON},
+      userId, pdfBuffer, job, improvedCVJSON,
     },
     retries: 3,
     timeout: "300s" 
