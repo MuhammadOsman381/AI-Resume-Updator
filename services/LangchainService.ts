@@ -42,7 +42,10 @@ export const ParseCV = async (text: string) => {
         model: "meta-llama/llama-4-maverick-17b-128e-instruct",
         temperature: 0,
         messages: [
-            { role: "system", content: "Extract CV information and return JSON." },
+            {
+                role: "system", content: `Extract CV information and return JSON.
+                IMPORTANT: Make project descriptions detailed. Include responsibilities, technologies, results, and impact where possible.
+                ` },
             { role: "user", content: `${instructions}\n\nExtract from:\n${text}` }
         ]
     });
@@ -102,6 +105,7 @@ export const GenerateImprovedCV = async (
                 - Keep name, links, education unchanged
                 - Improve wording ONLY using job description
                 - Optimize for ATS keywords
+                - Expand project descriptions with detailed responsibilities, technologies, outcomes, and impact
                 - Return ONLY valid JSON
 
         ${parser.getFormatInstructions()}
@@ -117,3 +121,66 @@ export const GenerateImprovedCV = async (
 
     return parser.parse(response.content as string);
 };
+
+export const GenerateProfessionalEmail = async (
+    jobTitle: string,
+    jobDescription: string,
+    applicantName?: string,
+    improvedCVJSON?: any
+) => {
+    const client = new Groq({ apiKey: process.env.GROQ_API_KEY });
+    const EmailSchema = z.object({
+        subject: z.string(),
+        body: z.string(),
+    });
+    const parser = StructuredOutputParser.fromZodSchema(EmailSchema);
+    const llm = new ChatGroq({
+        apiKey: process.env.GROQ_API_KEY!,
+        model: "meta-llama/llama-4-maverick-17b-128e-instruct",
+        temperature: 0.5,
+    });
+    const systemMessage = new SystemMessage(`
+You are an AI professional email writer.
+
+STRICT RULES:
+- Generate a professional email for applying to a job.
+- Use the job title and job description to highlight relevant skills and experience.
+- ONLY mention skills, projects, tech stack, or experience that are present in the applicant's CV.
+- Do NOT invent skills or experiences not in the CV.
+- Personalize the email greeting if applicant name is provided.
+- Include a sentence like: "I have attached my CV, please review it."
+- Keep it polite, concise, and persuasive.
+- Format the email body in proper HTML with paragraphs, spacing, and bullet points if needed.
+- Return ONLY valid JSON in the following format:
+${parser.getFormatInstructions()}
+  `);
+    const humanMessage = new HumanMessage(`
+JOB TITLE:
+${jobTitle}
+
+JOB DESCRIPTION:
+${jobDescription}
+
+APPLICANT NAME:
+${applicantName || "Not Provided"}
+
+APPLICANT CV:
+${JSON.stringify(improvedCVJSON, null, 2)}
+  `);
+    const response = await llm.invoke([systemMessage, humanMessage]);
+    const parsed = await parser.parse(response.content as string);
+    const htmlBody = `
+    <html>
+      <body style="font-family: Arial, sans-serif; line-height: 1.5; color: #333;">
+        ${parsed.body}
+        <p>Best regards,<br>${applicantName || "Applicant"}</p>
+      </body>
+    </html>
+  `;
+
+    return {
+        subject: parsed.subject,
+        body: htmlBody,
+    };
+};
+

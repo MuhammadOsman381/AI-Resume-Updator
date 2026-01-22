@@ -9,7 +9,13 @@ import axios from "axios";
 import Image from "next/image";
 import { SidebarTrigger } from "./ui/sidebar";
 
-const NavBar = ({ showSideBarTrigger, loginPage }: { showSideBarTrigger: boolean, loginPage?: boolean }) => {
+const NavBar = ({
+    showSideBarTrigger,
+    loginPage,
+}: {
+    showSideBarTrigger: boolean;
+    loginPage?: boolean;
+}) => {
     const { data: session } = useSession();
     const router = useRouter();
 
@@ -24,7 +30,6 @@ const NavBar = ({ showSideBarTrigger, loginPage }: { showSideBarTrigger: boolean
     };
 
     const handleDeleteAccount = async () => {
-        // call delete API here
         alert("Delete account clicked");
     };
 
@@ -32,7 +37,6 @@ const NavBar = ({ showSideBarTrigger, loginPage }: { showSideBarTrigger: boolean
         try {
             const response = await fetchUserHook.callApi("user/me", true, false);
             if (response?.status === "ok") {
-                console.log(response.data[0])
                 setUser(response.data[0]);
             }
         } catch (error) {
@@ -45,9 +49,10 @@ const NavBar = ({ showSideBarTrigger, loginPage }: { showSideBarTrigger: boolean
     }, []);
 
     return (
-                <nav className="flex w-full items-center justify-between px-6 py-1 h-16  bg-zinc-50 border-b">
-        <div className="flex items-center justify-center" >
+        <nav className="relative flex w-full items-center justify-between px-6 py-1 h-16 bg-zinc-50 border-b">
+            <div className="flex items-center gap-4">
                 {showSideBarTrigger && <SidebarTrigger />}
+
                 <div
                     className="text-[19px] font-bold text-gray-800 cursor-pointer"
                     onClick={() => router.push("/")}
@@ -55,6 +60,26 @@ const NavBar = ({ showSideBarTrigger, loginPage }: { showSideBarTrigger: boolean
                     Resume Enhancer
                 </div>
             </div>
+
+            {
+                !loginPage &&
+                <div className="hidden md:flex absolute left-1/2 -translate-x-1/2 items-center gap-8">
+                    <button
+                        onClick={() => router.push("/user")}
+                        className="text-sm font-medium text-gray-600 hover:text-gray-900"
+                    >
+                        AI CV Builder
+                    </button>
+
+                    <button
+                        onClick={() => router.push("/user/excel-job-apply")}
+                        className="text-sm font-medium text-gray-600 hover:text-gray-900"
+                    >
+                        Apply Job
+                    </button>
+                </div>
+            }
+
 
             {user && !loginPage && (
                 <div className="relative">
@@ -79,9 +104,36 @@ const NavBar = ({ showSideBarTrigger, loginPage }: { showSideBarTrigger: boolean
                         </div>
                     </div>
 
-                    {/* ACTIONS */}
+                    {/* DROPDOWN */}
                     {open && (
-                        <div className="absolute right-0 mt-2 w-40 rounded-lg border bg-white shadow-md p-2 space-y-2">
+                        <div className="absolute right-0 mt-2 w-48 rounded-lg border bg-white shadow-md p-2 space-y-2">
+
+                            {/* MOBILE ROUTES */}
+                            <div className="md:hidden space-y-1">
+                                <button
+                                    onClick={() => {
+                                        router.push("/user");
+                                        setOpen(false);
+                                    }}
+                                    className="w-full text-left px-3 py-2 text-sm rounded-md hover:bg-gray-100"
+                                >
+                                    AI CV Builder
+                                </button>
+
+                                <button
+                                    onClick={() => {
+                                        router.push("/user/excel-job-apply");
+                                        setOpen(false);
+                                    }}
+                                    className="w-full text-left px-3 py-2 text-sm rounded-md hover:bg-gray-100"
+                                >
+                                    Excel Job Apply
+                                </button>
+
+                                <div className="border-t my-2" />
+                            </div>
+
+                            {/* ACTIONS */}
                             <Button
                                 variant="outline"
                                 className="w-full"
