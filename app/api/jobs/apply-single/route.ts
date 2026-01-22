@@ -43,13 +43,9 @@
 
 
 import { NextResponse } from "next/server";
-import { Client } from "@upstash/qstash";
+import axios from "axios";
 import { decodeToken } from "@/services/JwtService";
 import { generateCVBinary } from "@/services/SingleApplicationService";
-
-const qstash = new Client({
-  token: process.env.QSTASH_TOKEN!,
-});
 
 export async function POST(req: Request) {
   const body = await req.json();
@@ -64,19 +60,36 @@ export async function POST(req: Request) {
     return NextResponse.json({ message: "Invalid token" }, { status: 401 });
   }
 
+  // Generate CV binary and other data
   const { userId, pdfBuffer, job, improvedCVJSON } = await generateCVBinary(body, user.id);
 
-  await qstash.publishJSON({
-    url: `${process.env.NEXT_PUBLIC_APP_URL}/api/workers/generate-email`,
-    body: {
-      userId, pdfBuffer, job, improvedCVJSON,
-    },
-    retries: 3,
-    timeout: "300s" 
-  });
+  try {
+    // Directly call the other API using axios
+    await axios.post(
+      `${process.env.NEXT_PUBLIC_APP_URL}/api/workers/generate-email`,
+      {
+        userId,
+        pdfBuffer,
+        job,
+        improvedCVJSON,
+      },
+      {
+        headers: {
+          "Content-Type": "application/json",
+        },
+        timeout: 300_000, // 5 minutes
+      }
+    );
+  } catch (error) {
+    console.error("Failed to call generate-email API", error);
+    return NextResponse.json(
+      { status: "error", message: "Failed to start job" },
+      { status: 500 }
+    );
+  }
 
   return NextResponse.json({
-    status: "queued",
+    status: "started",
     message: "Job applying process started. This may take a few minutes.",
   });
 }
