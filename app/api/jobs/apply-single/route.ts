@@ -45,6 +45,7 @@
 import { NextResponse } from "next/server";
 import { Client } from "@upstash/qstash";
 import { decodeToken } from "@/services/JwtService";
+import { generateCVBinary } from "@/services/SingleApplicationService";
 
 const qstash = new Client({
   token: process.env.QSTASH_TOKEN!,
@@ -63,12 +64,12 @@ export async function POST(req: Request) {
     return NextResponse.json({ message: "Invalid token" }, { status: 401 });
   }
 
-  // ✅ Send job to QStash
+  const { userId, pdfBuffer, job, improvedCVJSON } = await generateCVBinary(body, user.id);
+
   await qstash.publishJSON({
-    url: `${process.env.NEXT_PUBLIC_APP_URL}/api/workers/process-single-application`,
+    url: `${process.env.NEXT_PUBLIC_APP_URL}/api/workers/generate-email`,
     body: {
-      payload: body,
-      userId: user.id,
+      payload: {userId, pdfBuffer, job, improvedCVJSON},
     },
     retries: 3,
     timeout: "300s" 
