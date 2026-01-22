@@ -1,45 +1,33 @@
-import axios from "axios";
+import { verifySignatureAppRouter } from "@upstash/qstash/nextjs";
+import { processSingleApplication } from "@/services/Workers";
 import { handleEmail } from "@/services/SingleApplicationService";
+import { Client } from "@upstash/qstash";
+
 
 export const runtime = "nodejs";
 export const maxDuration = 300;
 
-export async function POST(req: Request) {
-  const { userId, pdfBuffer, job, improvedCVJSON } = await req.json();
-  console.log("Worker hit", userId);
+const qstash = new Client({
+  token: process.env.QSTASH_TOKEN!,
+});
 
-  // Handle email preparation
-  const { email, userRecord } = await handleEmail(
-    userId,
-    pdfBuffer.data,
-    job,
-    improvedCVJSON
-  );
+export const POST = verifySignatureAppRouter(
+  async (req: Request) => {
+    const { userId, pdfBuffer, job, improvedCVJSON } = await req.json();
+    console.log("QStash worker hit", userId);
 
-  try {
-    // Directly call the email worker API using axios
-     axios.post(
-      `${process.env.NEXT_PUBLIC_APP_URL}/api/workers/handle-send-email`,
-      {
-        email,
-        job,
-        pdfBuffer,
-        userRecord,
+    const { email, userRecord } = await handleEmail(userId, pdfBuffer.data, job, improvedCVJSON)
+
+    await qstash.publishJSON({
+      url: `${process.env.NEXT_PUBLIC_APP_URL}/api/workers/handle-send-email`,
+      body: {
+         email, job, pdfBuffer, userRecord,
       },
-      {
-        headers: {
-          "Content-Type": "application/json",
-        },
-        timeout: 300_000, // 5 minutes
-      }
-    );
-  } catch (error) {
-    console.error("Failed to call handle-send-email API", error);
-    return new Response(
-      JSON.stringify({ ok: false, message: "Failed to send email" }),
-      { status: 500 }
-    );
-  }
+      retries: 3,
+      timeout: "300s"
+    });
 
-  return new Response(JSON.stringify({ ok: true }), { status: 200 });
-}
+    return Response.json({ ok: true });
+  }
+);
+ 

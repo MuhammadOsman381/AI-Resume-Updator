@@ -17,7 +17,7 @@ export const generateCVBinary = async (
     userId: string
 ): Promise<{
     userId: string;
-    pdfBuffer: Buffer;
+    pdfBuffer: string;
     job: typeof jobs.$inferSelect;
     improvedCVJSON: any;
 }> => {
@@ -26,7 +26,7 @@ export const generateCVBinary = async (
     const job = await db.select().from(jobs).where(eq(jobs.id, id)).limit(1);
     const cv = await db.select().from(cvs).where(eq(cvs.id, cvId)).limit(1);
 
-    if (!job.length || !cv.length ) {
+    if (!job.length || !cv.length) {
         throw new Error("Job, CV or User not found");
     }
 
@@ -70,7 +70,7 @@ export const generateCVBinary = async (
 
     return {
         userId,
-        pdfBuffer,
+        pdfBuffer: pdfBuffer.toString("base64"),
         job: job[0],
         improvedCVJSON
     };
@@ -89,13 +89,14 @@ export const handleEmail = async (userId: string, pdfBuffer: Buffer, job: typeof
     return { email, userRecord: userRecord[0] };
 }
 
-export const handleSendEmailAndJobUpdation = async (email: any, job: typeof jobs.$inferSelect, pdfBuffer: Buffer, userRecord: typeof users.$inferSelect) => {
+export const handleSendEmailAndJobUpdation = async (email: any, job: typeof jobs.$inferSelect, pdfBuffer: string, userRecord: typeof users.$inferSelect) => {
+    const pdfBufferObj = Buffer.from(pdfBuffer, "base64");
     for (const recipient of job.emails) {
         await sendEmail(
             recipient,
             email.subject,
             email.body,
-            Buffer.from(pdfBuffer),
+            Buffer.from(pdfBufferObj),
             userRecord.name as string,
             userRecord.email
         );
@@ -104,4 +105,3 @@ export const handleSendEmailAndJobUpdation = async (email: any, job: typeof jobs
     console.log(`Job ${job.id} processed successfully.`);
     return true
 }
-    
