@@ -1,46 +1,44 @@
 import { NextResponse } from "next/server";
-import { TriggerClient } from "@trigger.dev/sdk";
-import { decodeToken } from "@/services/JwtService";
-import { processSingleApplication } from "@/services/Workers";
+import { tasks, task } from "@trigger.dev/sdk";
 
-/* ----------------------------------
-   Trigger.dev Client
------------------------------------ */
-const client = new TriggerClient({
-  id: "job-application-system",
-  apiKey: process.env.TRIGGER_API_KEY!,
-});
+// --------------------
+// Dummy JWT decode service
+// --------------------
+function decodeToken(token: string) {
+  try {
+    const payload = JSON.parse(Buffer.from(token.split(".")[1], "base64").toString());
+    return { id: payload.id };
+  } catch {
+    return null;
+  }
+}
 
-/* ----------------------------------
-   Trigger.dev Job (same file)
------------------------------------ */
-client.defineJob({
+// --------------------
+// Heavy long-running worker
+// --------------------
+async function processSingleApplication(body: any, userId: string) {
+  console.log("Starting application for user:", userId);
+
+  // Simulate 5-minute task
+  await new Promise((resolve) => setTimeout(resolve, 5 * 60 * 1000));
+
+  // Replace with your Puppeteer / LangChain / Email logic
+  console.log("Finished application for user:", userId);
+}
+
+// --------------------
+// Trigger.dev task (defined inline)
+// --------------------
+const processSingleApplicationTask = task({
   id: "process-single-application",
-  name: "Process Single Application",
-  version: "1.0.0",
-
-  trigger: client.eventTrigger({
-    name: "application.process",
-  }),
-
-  run: async (payload, io) => {
-    const { body, userId } = payload as {
-      body: any;
-      userId: string;
-    };
-
-    await io.logger.info("Job started", { userId });
-
-    // ⏳ LONG RUNNING TASK (5+ minutes)
-    await processSingleApplication(body, userId);
-
-    await io.logger.info("Job completed", { userId });
+  run: async (payload: { body: any; userId: string }) => {
+    await processSingleApplication(payload.body, payload.userId);
   },
 });
 
-/* ----------------------------------
-   Next.js API Route
------------------------------------ */
+// --------------------
+// Next.js API Route
+// --------------------
 export const runtime = "nodejs";
 
 export async function POST(req: Request) {
@@ -56,20 +54,19 @@ export async function POST(req: Request) {
     return NextResponse.json({ message: "Invalid token" }, { status: 401 });
   }
 
-  // ✅ Trigger background job
-  await client.sendEvent({
-    name: "application.process",
-    payload: {
-      body,
-      userId: user.id,
-    },
+  // Trigger background job
+  const handle = await tasks.trigger("process-single-application", {
+    body,
+    userId: user.id,
   });
 
   return NextResponse.json({
     status: "processing",
     message: "Job applying process started. This may take a few minutes.",
+    runId: handle.id,
   });
 }
+
 
 
 
