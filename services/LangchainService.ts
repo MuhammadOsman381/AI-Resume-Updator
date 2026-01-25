@@ -3,7 +3,7 @@ import { z } from "zod";
 import { StructuredOutputParser } from "@langchain/core/output_parsers";
 import { HumanMessage, SystemMessage } from "@langchain/core/messages";
 import { ChatGroq } from "@langchain/groq";
-
+import sanitizeHtml from "sanitize-html";
 
 const client = new Groq({ apiKey: process.env.GROQ_API_KEY });
 
@@ -128,32 +128,44 @@ export const GenerateProfessionalEmail = async (
     applicantName?: string,
     improvedCVJSON?: any
 ) => {
+    if (!process.env.GROQ_API_KEY) {
+        throw new Error("GROQ_API_KEY is not set");
+    }
+
     const client = new Groq({ apiKey: process.env.GROQ_API_KEY });
+
+    // Define the expected JSON schema
     const EmailSchema = z.object({
         subject: z.string(),
         body: z.string(),
     });
     const parser = StructuredOutputParser.fromZodSchema(EmailSchema);
+
     const llm = new ChatGroq({
         apiKey: process.env.GROQ_API_KEY!,
         model: "meta-llama/llama-4-maverick-17b-128e-instruct",
         temperature: 0.5,
     });
-    const systemMessage = new SystemMessage(`
-You are an AI professional email writer.
 
-STRICT RULES:
-- Generate a professional email for applying to a job.
-- Use the job title and job description to highlight relevant skills and experience.
-- ONLY mention skills, projects, tech stack, or experience that are present in the applicant's CV.
-- Do NOT invent skills or experiences not in the CV.
-- Personalize the email greeting if applicant name is provided.
-- Include a sentence like: "I have attached my CV, please review it."
-- Keep it polite, concise, and persuasive.
-- Format the email body in proper HTML with paragraphs, spacing, and bullet points if needed.
-- Return ONLY valid JSON in the following format:
+    // Safely serialize the CV
+    const safeCV = JSON.parse(JSON.stringify(improvedCVJSON || {}));
+
+    const systemMessage = new SystemMessage(`
+        You are an AI professional email writer.
+
+        STRICT RULES:
+        - Generate a professional email for applying to a job.
+        - Use the job title and job description to highlight relevant skills and experience.
+        - ONLY mention skills, projects, tech stack, or experience that are present in the applicant's CV.
+        - Do NOT invent skills or experiences not in the CV.
+        - Personalize the email greeting if applicant name is provided.
+        - Include a sentence like: "I have attached my CV, please review it."
+        - Keep it polite, concise, and persuasive.
+        - Format the email body in proper HTML with paragraphs, spacing, and bullet points if needed.
+        - Return ONLY valid JSON in the following format:
 ${parser.getFormatInstructions()}
   `);
+
     const humanMessage = new HumanMessage(`
 JOB TITLE:
 ${jobTitle}
@@ -165,14 +177,29 @@ APPLICANT NAME:
 ${applicantName || "Not Provided"}
 
 APPLICANT CV:
-${JSON.stringify(improvedCVJSON, null, 2)}
+${JSON.stringify(safeCV, null, 2)}
   `);
-    const response = await llm.invoke([systemMessage, humanMessage]);
-    const parsed = await parser.parse(response.content as string);
+
+    let parsed;
+    try {
+        const response = await llm.invoke([systemMessage, humanMessage]);
+        parsed = await parser.parse(response.content as string);
+    } catch (err) {
+        console.error("Error parsing LLM output:", err);
+        throw new Error("Failed to generate professional email from AI");
+    }
+
+    // Sanitize the email body to remove any unsafe HTML (optional but recommended)
+    const safeBody = sanitizeHtml(parsed.body, {
+        allowedTags: sanitizeHtml.defaults.allowedTags.concat(["p", "br", "ul", "li","div"]),
+        allowedAttributes: false,
+
+    });
+
     const htmlBody = `
     <html>
       <body style="font-family: Arial, sans-serif; line-height: 1.5; color: #333;">
-        ${parsed.body}
+        ${safeBody}
         <p>Best regards,<br>${applicantName || "Applicant"}</p>
       </body>
     </html>
@@ -183,4 +210,3 @@ ${JSON.stringify(improvedCVJSON, null, 2)}
         body: htmlBody,
     };
 };
-

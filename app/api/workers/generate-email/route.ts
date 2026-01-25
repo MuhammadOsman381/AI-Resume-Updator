@@ -5,20 +5,19 @@ export const runtime = "nodejs";
 export const maxDuration = 300;
 
 export async function POST(req: Request) {
+  console.log("Worker 2 started processing");
   const { userId, pdfBuffer, job, improvedCVJSON } = await req.json();
-  console.log("Worker hit", userId);
 
   // Handle email preparation
-  const { email, userRecord } = await handleEmail(
-    userId,
-    pdfBuffer.data,
-    job,
-    improvedCVJSON
-  );
 
   try {
+    const { email, userRecord } = await handleEmail(
+      userId,
+      job,
+      improvedCVJSON
+    );
     // Directly call the email worker API using axios
-    await axios.post(
+    axios.post(
       `${process.env.NEXT_PUBLIC_APP_URL}/api/workers/handle-send-email`,
       {
         email,
@@ -30,7 +29,6 @@ export async function POST(req: Request) {
         headers: {
           "Content-Type": "application/json",
         },
-        timeout: 300_000, // 5 minutes
       }
     );
   } catch (error) {

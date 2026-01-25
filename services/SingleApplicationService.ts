@@ -77,7 +77,7 @@ export const generateCVBinary = async (
 };
 
 
-export const handleEmail = async (userId: string, pdfBuffer: Buffer, job: typeof jobs.$inferSelect, improvedCVJSON: any) => {
+export const handleEmail = async (userId: string, job: typeof jobs.$inferSelect, improvedCVJSON: any) => {
     const userRecord = await db.select().from(users).where(eq(users.id, userId)).limit(1);
 
     const email = await GenerateProfessionalEmail(
@@ -90,13 +90,14 @@ export const handleEmail = async (userId: string, pdfBuffer: Buffer, job: typeof
 }
 
 export const handleSendEmailAndJobUpdation = async (email: any, job: typeof jobs.$inferSelect, pdfBuffer: string, userRecord: typeof users.$inferSelect) => {
+   
     const pdfBufferObj = Buffer.from(pdfBuffer, "base64");
     for (const recipient of job.emails) {
         await sendEmail(
             recipient,
             email.subject,
             email.body,
-            Buffer.from(pdfBufferObj),
+            pdfBufferObj,
             userRecord.name as string,
             userRecord.email
         );
