@@ -26,6 +26,7 @@
     "@radix-ui/react-tooltip": "^1.2.8",
     "@sparticuz/chromium": "^143.0.4",
     "@sparticuz/chromium-min": "^143.0.4",
+    "@trigger.dev/sdk": "^4.3.3",
     "@upstash/qstash": "^2.8.4",
     "axios": "^1.13.2",
     "class-variance-authority": "^0.7.1",
