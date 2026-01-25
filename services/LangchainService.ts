@@ -197,7 +197,6 @@ ${JSON.stringify(safeCV, null, 2)}
     <html>
       <body style="font-family: Arial, sans-serif; line-height: 1.5; color: #333;">
         ${safeBody}
-        <p>Best regards,<br>${applicantName || "Applicant"}</p>
       </body>
     </html>
   `;
