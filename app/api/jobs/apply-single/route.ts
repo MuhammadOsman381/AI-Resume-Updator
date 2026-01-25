@@ -1,11 +1,5 @@
 import { NextResponse } from "next/server";
-import { tasks,configure } from "@trigger.dev/sdk";
-
-
-configure({
-  secretKey: process.env.TRIGGER_API_KEY,
-});
-
+import { tasks } from "@trigger.dev/sdk";
 
 function decodeToken(token: string) {
   try {

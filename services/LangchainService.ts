@@ -5,7 +5,7 @@ import { HumanMessage, SystemMessage } from "@langchain/core/messages";
 import { ChatGroq } from "@langchain/groq";
 import sanitizeHtml from "sanitize-html";
 
-const client = new Groq({ apiKey: process.env.GROQ_API_KEY });
+const client = new Groq({ apiKey: process.env.GROQ_API_KEY! });
 
 export const ParseCV = async (text: string) => {
     const schema = z.object({
@@ -128,11 +128,8 @@ export const GenerateProfessionalEmail = async (
     applicantName?: string,
     improvedCVJSON?: any
 ) => {
-    if (!process.env.GROQ_API_KEY) {
-        throw new Error("GROQ_API_KEY is not set");
-    }
 
-    const client = new Groq({ apiKey: process.env.GROQ_API_KEY });
+    const client = new Groq({ apiKey: process.env.GROQ_API_KEY! });
 
     // Define the expected JSON schema
     const EmailSchema = z.object({
