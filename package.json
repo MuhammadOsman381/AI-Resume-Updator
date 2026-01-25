@@ -59,6 +59,7 @@
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
+    "@trigger.dev/build": "^4.3.3",
     "@types/ejs": "^3.1.5",
     "@types/formidable": "^3.4.6",
     "@types/jsonwebtoken": "^9.0.10",

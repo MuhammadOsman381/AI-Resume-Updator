@@ -1,5 +1,11 @@
 import { NextResponse } from "next/server";
-import { tasks } from "@trigger.dev/sdk";
+import { tasks,configure } from "@trigger.dev/sdk";
+
+
+configure({
+  secretKey: process.env.TRIGGER_API_KEY,
+});
+
 
 function decodeToken(token: string) {
   try {
@@ -8,10 +14,6 @@ function decodeToken(token: string) {
   } catch {
     return null;
   }
-}
-
-async function processSingleApplication(body: any, userId: string) {
-  await new Promise((resolve) => setTimeout(resolve, 5 * 60 * 1000));
 }
 
 export const runtime = "nodejs";
@@ -27,7 +29,6 @@ export async function POST(req: Request) {
   const handle = await tasks.trigger("process-single-application", {
     body,
     userId: user.id,
-    apiKey: process.env.TRIGGER_SECRET_KEY,
   });
 
   return NextResponse.json({
