@@ -1,9 +1,6 @@
 import { NextResponse } from "next/server";
-import { tasks, task } from "@trigger.dev/sdk";
+import { tasks } from "@trigger.dev/sdk";
 
-// --------------------
-// Dummy JWT decode service
-// --------------------
 function decodeToken(token: string) {
   try {
     const payload = JSON.parse(Buffer.from(token.split(".")[1], "base64").toString());
@@ -13,56 +10,29 @@ function decodeToken(token: string) {
   }
 }
 
-// --------------------
-// Heavy long-running worker
-// --------------------
 async function processSingleApplication(body: any, userId: string) {
-  console.log("Starting application for user:", userId);
-
-  // Simulate 5-minute task
   await new Promise((resolve) => setTimeout(resolve, 5 * 60 * 1000));
-
-  // Replace with your Puppeteer / LangChain / Email logic
-  console.log("Finished application for user:", userId);
 }
 
-// --------------------
-// Trigger.dev task (defined inline)
-// --------------------
-const processSingleApplicationTask = task({
-  id: "process-single-application",
-  run: async (payload: { body: any; userId: string }) => {
-    await processSingleApplication(payload.body, payload.userId);
-  },
-});
-
-// --------------------
-// Next.js API Route
-// --------------------
 export const runtime = "nodejs";
 
 export async function POST(req: Request) {
   const body = await req.json();
   const authHeader = req.headers.get("authorization");
-
-  if (!authHeader) {
-    return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
-  }
+  if (!authHeader) return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
 
   const user = decodeToken(authHeader);
-  if (!user?.id) {
-    return NextResponse.json({ message: "Invalid token" }, { status: 401 });
-  }
+  if (!user?.id) return NextResponse.json({ message: "Invalid token" }, { status: 401 });
 
-  // Trigger background job
   const handle = await tasks.trigger("process-single-application", {
     body,
     userId: user.id,
+    apiKey: process.env.TRIGGER_SECRET_KEY,
   });
 
   return NextResponse.json({
     status: "processing",
-    message: "Job applying process started. This may take a few minutes.",
+    message: "Job started. Trigger.dev will run it in the cloud.",
     runId: handle.id,
   });
 }
