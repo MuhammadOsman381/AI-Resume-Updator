@@ -1,36 +1,76 @@
 import { NextResponse } from "next/server";
-import { tasks } from "@trigger.dev/sdk";
-
-function decodeToken(token: string) {
-  try {
-    const payload = JSON.parse(Buffer.from(token.split(".")[1], "base64").toString());
-    return { id: payload.id };
-  } catch {
-    return null;
-  }
-}
+import { decodeToken } from "@/services/JwtService";
 
 export const runtime = "nodejs";
+export const maxDuration = 300;
+
+const QSTASH_TOKEN = process.env.QSTASH_TOKEN;
+const QSTASH_URL = "https://qstash.upstash.io/v1/publish/job-applications";
 
 export async function POST(req: Request) {
   const body = await req.json();
   const authHeader = req.headers.get("authorization");
-  if (!authHeader) return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
+
+  if (!authHeader) {
+    return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
+  }
 
   const user = decodeToken(authHeader);
-  if (!user?.id) return NextResponse.json({ message: "Invalid token" }, { status: 401 });
+  if (!user?.id) {
+    return NextResponse.json({ message: "Invalid token" }, { status: 401 });
+  }
 
-  const handle = await tasks.trigger("process-single-application", {
-    body,
-    userId: user.id,
+  await fetch(QSTASH_URL, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${QSTASH_TOKEN}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ body, userId: user.id }),
   });
 
   return NextResponse.json({
     status: "processing",
-    message: "Job started. Trigger.dev will run it in the cloud.",
-    runId: handle.id,
+    message: "Job applying process is started and running in the background.",
   });
 }
+
+
+
+
+
+
+
+// import { NextResponse } from "next/server";
+// import { decodeToken } from "@/services/JwtService";
+// import { processSingleApplication } from "@/services/Workers";
+
+// export const runtime = "nodejs";
+// export const maxDuration = 300; 
+
+
+
+// export async function POST(req: Request) {
+//   const body = await req.json();
+//   const authHeader = req.headers.get("authorization");
+
+//   if (!authHeader) {
+//     return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
+//   }
+
+//   const user = decodeToken(authHeader);
+//   if (!user?.id) {
+//     return NextResponse.json({ message: "Invalid token" }, { status: 401 });
+//   }
+
+//   // 🚀 Fire-and-forget
+//   processSingleApplication(body, user.id).catch(console.error);
+
+//   return NextResponse.json({
+//     status: "processing",
+//     message: "Job applying process is started this may take a some minutes.",
+//   });
+// }
 
 
 

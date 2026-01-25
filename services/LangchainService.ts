@@ -59,32 +59,32 @@ export const GenerateImprovedCV = async (
     jobDescription: string
 ) => {
     const CVSchema = z.object({
-        name: z.string(),
-        links: z.array(z.string()),
-        summary: z.string(),
-        position: z.string(),
+        name: z.string().optional(),
+        links: z.array(z.string()).optional(),
+        summary: z.string().optional(),
+        position: z.string().optional(),
         projects: z.array(
             z.object({
-                link: z.string(),
-                title: z.string(),
-                description: z.string()
+                link: z.string().optional(),
+                title: z.string().optional(),
+                description: z.string().optional()
             })
-        ),
+        ).optional(),
         education: z.array(
             z.object({
-                year: z.string(),
-                degree: z.string(),
-                institute: z.string()
+                year: z.string().optional(),
+                degree: z.string().optional(),
+                institute: z.string().optional()
             })
-        ),
+        ).optional(),
         experience: z.array(
             z.object({
-                title: z.string(),
-                company: z.string(),
-                description: z.string()
+                title: z.string().optional(),
+                company: z.string().optional(),
+                description: z.string().optional()
             })
-        ),
-        tech_stack: z.array(z.string())
+        ).optional(),
+        tech_stack: z.array(z.string()).optional()
     });
 
     const parser = StructuredOutputParser.fromZodSchema(CVSchema);
@@ -188,7 +188,7 @@ ${JSON.stringify(safeCV, null, 2)}
 
     // Sanitize the email body to remove any unsafe HTML (optional but recommended)
     const safeBody = sanitizeHtml(parsed.body, {
-        allowedTags: sanitizeHtml.defaults.allowedTags.concat(["p", "br", "ul", "li","div"]),
+        allowedTags: sanitizeHtml.defaults.allowedTags.concat(["p", "br", "ul", "li", "div"]),
         allowedAttributes: false,
 
     });
