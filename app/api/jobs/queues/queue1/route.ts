@@ -11,6 +11,8 @@ export async function POST(req: Request) {
   try {
     const { email } = await step2(body.job, body.user, body.improvedCVJSON, body.template);
 
+    if (!email) throw new Error("Step2 did not return email");
+
     // enqueue step3 with the output of step2
     await qstash.publishJSON({
       url: `${process.env.NEXT_PUBLIC_BASE_URL}/api/jobs/queues/queue2`,
