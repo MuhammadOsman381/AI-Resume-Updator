@@ -15,23 +15,23 @@ export async function POST(req: Request) {
       return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
     }
 
-    const user = decodeToken(authHeader);
-    if (!user?.id) {
+    const userData = decodeToken(authHeader);
+    if (!userData?.id) {
       return NextResponse.json({ message: "Invalid token" }, { status: 401 });
     }
 
-    const userId = user.id;
+    const userId = userData.id;
 
     // Check userId before DB call
     if (!userId) throw new Error("userId is missing");
 
     // Run step1
-    const { job, cv, user: userRecord, improvedCVJSON, template } = await step1(body, userId);
+    const { job, cv, user, improvedCVJSON, template } = await step1(body, userId);
 
     // Queue step2 with all necessary data
     await qstash.publishJSON({
-      url: `${process.env.NEXT_PUBLIC_BASE_URL}/api/jobs/queues/queue2`,
-      body: { job, cv, user: userRecord, improvedCVJSON, template, userId },
+      url: `${process.env.NEXT_PUBLIC_BASE_URL}/api/jobs/queues/queue1`,
+      body: { job, cv, user, improvedCVJSON, template, userId },
       retries: 3,
     });
 
