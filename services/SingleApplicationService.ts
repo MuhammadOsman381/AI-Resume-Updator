@@ -115,3 +115,4 @@ export async function step3(
     }
     await db.update(jobs).set({ status: "applied" }).where(eq(jobs.id, job.id));
 }
+
