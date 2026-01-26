@@ -9,7 +9,6 @@ import path from "path";
 
 import puppeteerCore from "puppeteer-core";
 import puppeteer from "puppeteer";
-import { decodeToken } from "@/services/JwtService";
 import { sendEmail } from "@/services/NodeMailerService";
 
 

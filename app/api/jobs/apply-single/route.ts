@@ -1,31 +1,28 @@
+// pages/api/queueStep1.ts
 import { NextResponse } from "next/server";
-import { Client } from "@upstash/qstash"; 
-import { decodeToken } from "@/services/JwtService";
+import { Client } from "@upstash/qstash";
+import { step1 } from "@/services/SingleApplicationService";
 
-const qstashClient = new Client({
-  token: process.env.QSTASH_TOKEN!,
-});
+const qstash = new Client({ token: process.env.QSTASH_TOKEN! });
 
 export async function POST(req: Request) {
   const body = await req.json();
-  const authHeader = req.headers.get("authorization");
-  if (!authHeader) {
-    return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
+  const { userId } = body;
+
+  try {
+    const { job, cv, user, improvedCVJSON, template } = await step1(body, userId);
+
+    await qstash.publishJSON({
+      url: `${process.env.NEXT_PUBLIC_BASE_URL}/api/queues/queue1`,
+      body: { job, cv, user, improvedCVJSON, template },
+      retries: 3,
+    });
+
+    return NextResponse.json({ message: "Step1 completed and queued Step2" });
+  } catch (err) {
+    console.error("Step1 error:", err);
+    return NextResponse.json({ message: "Step1 failed" }, { status: 500 });
   }
-
-  const user = decodeToken(authHeader);
-  if (!user?.id) {
-    return NextResponse.json({ message: "Invalid token" }, { status: 401 });
-  }
-
-  // enqueue job in QStash
-  await qstashClient.publishJSON({
-    url: `${process.env.NEXT_PUBLIC_BASE_URL}/api/process-application`,
-    body: { ...body, userId: user.id },
-    retries: 3,
-  });
-
-  return NextResponse.json({ message: "Job queued successfully" });
 }
 
 
