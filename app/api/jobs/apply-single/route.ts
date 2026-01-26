@@ -31,8 +31,6 @@ export async function POST(req: Request) {
 
 
 
-
-
 // import { NextResponse } from "next/server";
 // import { decodeToken } from "@/services/JwtService";
 // import { processSingleApplication } from "@/services/Workers";
