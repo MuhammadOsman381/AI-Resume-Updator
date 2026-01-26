@@ -1,16 +1,14 @@
 import { NextResponse } from "next/server";
+import { Client } from "@upstash/qstash"; 
 import { decodeToken } from "@/services/JwtService";
 
-export const runtime = "nodejs";
-export const maxDuration = 300;
-
-const QSTASH_TOKEN = process.env.QSTASH_TOKEN;
-const QSTASH_URL = "https://qstash.upstash.io/v1/publish/job-applications";
+const qstashClient = new Client({
+  token: process.env.QSTASH_TOKEN!,
+});
 
 export async function POST(req: Request) {
   const body = await req.json();
   const authHeader = req.headers.get("authorization");
-
   if (!authHeader) {
     return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
   }
@@ -20,21 +18,15 @@ export async function POST(req: Request) {
     return NextResponse.json({ message: "Invalid token" }, { status: 401 });
   }
 
-  await fetch(QSTASH_URL, {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${QSTASH_TOKEN}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({ body, userId: user.id }),
+  // enqueue job in QStash
+  await qstashClient.publishJSON({
+    url: `${process.env.NEXT_PUBLIC_BASE_URL}/api/process-application`,
+    body: { ...body, userId: user.id },
+    retries: 3,
   });
 
-  return NextResponse.json({
-    status: "processing",
-    message: "Job applying process is started and running in the background.",
-  });
+  return NextResponse.json({ message: "Job queued successfully" });
 }
-
 
 
 
