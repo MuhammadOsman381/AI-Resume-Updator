@@ -2,19 +2,36 @@
 import { NextResponse } from "next/server";
 import { Client } from "@upstash/qstash";
 import { step1 } from "@/services/SingleApplicationService";
+import { decodeToken } from "@/services/JwtService";
 
 const qstash = new Client({ token: process.env.QSTASH_TOKEN! });
 
 export async function POST(req: Request) {
-  const body = await req.json();
-  const { userId } = body;
-
   try {
-    const { job, cv, user, improvedCVJSON, template } = await step1(body, userId);
+    const body = await req.json();
+    const authHeader = req.headers.get("authorization");
 
+    if (!authHeader) {
+      return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
+    }
+
+    const user = decodeToken(authHeader);
+    if (!user?.id) {
+      return NextResponse.json({ message: "Invalid token" }, { status: 401 });
+    }
+
+    const userId = user.id;
+
+    // Check userId before DB call
+    if (!userId) throw new Error("userId is missing");
+
+    // Run step1
+    const { job, cv, user: userRecord, improvedCVJSON, template } = await step1(body, userId);
+
+    // Queue step2 with all necessary data
     await qstash.publishJSON({
-      url: `${process.env.NEXT_PUBLIC_BASE_URL}/api/queues/queue1`,
-      body: { job, cv, user, improvedCVJSON, template },
+      url: `${process.env.NEXT_PUBLIC_BASE_URL}/api/jobs/queues/queue2`,
+      body: { job, cv, user: userRecord, improvedCVJSON, template, userId },
       retries: 3,
     });
 
@@ -24,6 +41,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ message: "Step1 failed" }, { status: 500 });
   }
 }
+
 
 
 

@@ -13,7 +13,7 @@ export async function POST(req: Request) {
 
     // enqueue step3 with the output of step2
     await qstash.publishJSON({
-      url: `${process.env.NEXT_PUBLIC_BASE_URL}/api/queues/queue2`,
+      url: `${process.env.NEXT_PUBLIC_BASE_URL}/api/jobs/queues/queue2`,
       body: { ...body, email },
       retries: 3,
     });
