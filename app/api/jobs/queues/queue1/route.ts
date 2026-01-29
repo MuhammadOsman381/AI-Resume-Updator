@@ -13,7 +13,6 @@ export async function POST(req: Request) {
 
     if (!email) throw new Error("Step2 did not return email");
 
-    // enqueue step3 with the output of step2
     await qstash.publishJSON({
       url: `${process.env.NEXT_PUBLIC_BASE_URL}/api/jobs/queues/queue2`,
       body: { ...body, email },

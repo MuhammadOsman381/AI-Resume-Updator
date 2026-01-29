@@ -252,7 +252,7 @@ const Page = () => {
                   </div>
                 </div>
 
-                <Button
+                {/* <Button
                   onClick={
                     async () => {
                       await applyToAllJobsHook.callApi("jobs/apply-all", {
@@ -273,7 +273,7 @@ const Page = () => {
                     ) : "Apply to all Jobs"
                   }
 
-                </Button>
+                </Button> */}
 
               </div>
 
