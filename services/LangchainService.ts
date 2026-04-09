@@ -39,7 +39,7 @@ export const ParseCV = async (text: string) => {
     const parser = StructuredOutputParser.fromZodSchema(schema);
     const instructions = parser.getFormatInstructions();
     const res = await client.chat.completions.create({
-        model: "meta-llama/llama-4-maverick-17b-128e-instruct",
+        model: "meta-llama/llama-4-scout-17b-16e-instruct",
         temperature: 0,
         messages: [
             {
@@ -91,7 +91,7 @@ export const GenerateImprovedCV = async (
 
     const llm = new ChatGroq({
         apiKey: process.env.GROQ_API_KEY!,
-        model: "meta-llama/llama-4-maverick-17b-128e-instruct",
+        model: "meta-llama/llama-4-scout-17b-16e-instruct",
         temperature: 0.4
     });
 
@@ -140,7 +140,7 @@ export const GenerateProfessionalEmail = async (
 
     const llm = new ChatGroq({
         apiKey: process.env.GROQ_API_KEY!,
-        model: "meta-llama/llama-4-maverick-17b-128e-instruct",
+        model: "meta-llama/llama-4-scout-17b-16e-instruct",
         temperature: 0.5,
     });
 

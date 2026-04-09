@@ -23,7 +23,6 @@ export const cvs = pgTable("cvs", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
-
 export const jobStatusEnum = pgEnum("job_status", [
   "pending",
   "applied",
