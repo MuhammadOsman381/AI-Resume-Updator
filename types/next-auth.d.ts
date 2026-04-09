@@ -1,9 +1,8 @@
-// next-auth.d.ts
 import NextAuth from "next-auth";
 
 declare module "next-auth" {
   interface Session {
-    jwt?: string; // ✅ add jwt property
+    jwt?: string;
   }
 
   interface JWT {
