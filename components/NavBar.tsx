@@ -77,7 +77,7 @@ const NavBar = ({
                         <Zap className="w-4 h-4 text-white" />
                     </div>
                     <span className="text-[15px] font-bold tracking-tight text-foreground">
-                        Resume<span className="text-gradient">AI</span>
+                        Resume<span className="text-gradient">{" "}AI</span>
                     </span>
                 </button>
             </div>

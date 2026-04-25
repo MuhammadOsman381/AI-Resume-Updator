@@ -1,5 +1,4 @@
 "use client";
-
 import React, { useEffect, useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
@@ -43,16 +42,6 @@ interface Jobs {
 interface CV {
     id: string;
     title: string;
-}
-
-function normalizeText(text: string) {
-    return text
-        .normalize("NFKC")
-        .replace(/[\p{Extended_Pictographic}\uFE0F]/gu, "")
-        .replace(/['']/g, "'")
-        .replace(/[""]/g, '"')
-        .replace(/\s+/g, " ")
-        .trim();
 }
 
 function SectionCard({ title, children }: { title: string; children: React.ReactNode }) {
@@ -314,7 +303,7 @@ const Page = () => {
                                                     <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${isApplied
                                                         ? "bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-400"
                                                         : "bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-400"
-                                                    }`}>
+                                                        }`}>
                                                         {job.status.charAt(0).toUpperCase() + job.status.slice(1)}
                                                     </span>
                                                 </div>
