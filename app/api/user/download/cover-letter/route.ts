@@ -35,7 +35,7 @@ export async function POST(req: Request) {
         return NextResponse.json({ status: "error", message: "CV not found" }, { status: 404 });
     }
 
-    const cv = cvData[0].cvJson;
+    const cv:any = cvData[0].cvJson;
 
     const templatePath = path.join(
         process.cwd(),
