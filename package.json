@@ -29,6 +29,7 @@
     "@upstash/qstash": "^2.8.4",
     "axios": "^1.13.2",
     "class-variance-authority": "^0.7.1",
+    "cloudinary": "^2.9.0",
     "clsx": "^2.1.1",
     "drizzle-orm": "^0.45.1",
     "ejs": "^3.1.10",

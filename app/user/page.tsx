@@ -13,6 +13,7 @@ import { JobDescriptionStep } from "@/components/user/JobDescriptionStep";
 import { ImproveStep } from "@/components/user/ImproveStep";
 import { SelectionStep } from "@/components/user/SelectionStep";
 import { AtsResultStep } from "@/components/user/AtsResultStep";
+import { CoverLetterStep } from "@/components/user/CoverLetterStep";
 import { useToast } from "@/hooks/use-toast";
 
 
@@ -57,8 +58,12 @@ export default function Home() {
     const [improvedCVLoader, setImprovedCVLoader] = useState<boolean>(false);
 
     const [title, setTitle] = useState<string>("");
-    const [selectionType, setSelectionType] = useState<"ats" | "improve" | "">("");
+    const [selectionType, setSelectionType] = useState<"ats" | "improve" | "cover-letter" | "">("");
     const [atsResult, setAtsResult] = useState<any>(null);
+
+    const [coverLetter, setCoverLetter] = useState<string>("");
+    const [coverLetterLoader, setCoverLetterLoader] = useState<boolean>(false);
+    const [coverLetterCompany, setCoverLetterCompany] = useState<string>("");
 
     const router = useRouter();
 
@@ -293,6 +298,71 @@ export default function Home() {
         }
     };
 
+    const handleGenerateCoverLetter = async (jobTitle: string, companyName: string, jobDescription: string) => {
+        setCoverLetterLoader(true);
+        setCoverLetterCompany(companyName);
+        try {
+            const res = await axios.post(
+                `/api/user/generate-cover-letter`,
+                { cvID, jobTitle, companyName, jobDescription },
+                {
+                    headers: {
+                        authorization: localStorage.getItem("authorization") || "",
+                    },
+                }
+            );
+            if (res.data.status === "ok") {
+                setCoverLetter(res.data.coverLetter);
+            } else {
+                throw new Error(res.data.message || "Failed to generate cover letter");
+            }
+        } catch (error: any) {
+            console.error("Cover letter generation failed", error);
+            toast({
+                title: "Generation Failed",
+                description: error.response?.data?.message || error.message || "Something went wrong. Please try again.",
+                variant: "destructive",
+            });
+        } finally {
+            setCoverLetterLoader(false);
+        }
+    };
+
+    const downloadCoverLetterPDF = async () => {
+        try {
+            setCoverLetterLoader(true);
+            const res = await axios.post(
+                `/api/user/download/cover-letter`,
+                {
+                    cvID,
+                    coverLetter,
+                    companyName: coverLetterCompany
+                },
+                {
+                    headers: {
+                        authorization: localStorage.getItem("authorization") || "",
+                    },
+                    responseType: "blob",
+                }
+            );
+
+            const blob = new Blob([res.data], { type: "application/pdf" });
+            const url = window.URL.createObjectURL(blob);
+
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = `cover-letter-${coverLetterCompany}.pdf`;
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            window.URL.revokeObjectURL(url);
+        } catch (error) {
+            console.error("PDF download failed", error);
+        } finally {
+            setCoverLetterLoader(false);
+        }
+    };
+
 
 
     useEffect(() => {
@@ -383,6 +453,16 @@ export default function Home() {
                     atsResult={atsResult}
                     setSelectionType={setSelectionType}
                     setStep={setStep}
+                />
+            );
+        case 7:
+            return (
+                <CoverLetterStep
+                    handleGenerate={handleGenerateCoverLetter}
+                    coverLetter={coverLetter}
+                    loading={coverLetterLoader}
+                    setStep={setStep}
+                    downloadPDF={downloadCoverLetterPDF}
                 />
             );
         default:

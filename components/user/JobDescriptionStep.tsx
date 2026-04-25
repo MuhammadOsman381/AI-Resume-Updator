@@ -6,7 +6,7 @@ import NavBar from "@/components/NavBar";
 import { Loader2, FileText, Search, Sparkles, ArrowLeft } from "lucide-react";
 
 interface JobDescriptionStepProps {
-    selectionType: "ats" | "improve" | "";
+    selectionType: string;
     text: string;
     setText: (text: string) => void;
     loader: boolean;

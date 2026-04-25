@@ -12,6 +12,7 @@ export const users = pgTable("users", {
   name: text("name"),
   email: text("email").notNull().unique(),
   image: text("image"),
+  role: text("role").notNull().default("user"),
   createdAt: timestamp("created_at").defaultNow(),
 });
 
@@ -37,5 +38,22 @@ export const jobs = pgTable("jobs", {
   description: text("description"),
   emails: jsonb("emails").$type<string[]>().notNull().default([]),
   status: jobStatusEnum("status").notNull().default("pending"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const templates = pgTable("templates", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  title: text("title").notNull(),
+  ejs: text("ejs").notNull(),
+  imageUrl: text("image_url").notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const admins = pgTable("admins", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  name: text("name").notNull(),
+  email: text("email").notNull().unique(),
+  password: text("password").notNull(),
+  image: text("image"),
   createdAt: timestamp("created_at").defaultNow(),
 });

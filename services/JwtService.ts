@@ -4,6 +4,7 @@ interface DecodedToken extends JwtPayload {
     id?: string;
     name?: string;
     email?: string;
+    role?: string;
 }
 
 export function decodeToken(token: string): DecodedToken | null {

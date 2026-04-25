@@ -2,7 +2,7 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Search, Sparkles, ArrowRight, CheckCircle2 } from "lucide-react";
+import { Search, Sparkles, ArrowRight, CheckCircle2, FileText } from "lucide-react";
 import NavBar from "@/components/NavBar";
 
 interface SelectionStepProps {
@@ -33,6 +33,17 @@ export function SelectionStep({ setSelectionType, setStep }: SelectionStepProps)
             benefits: ["AI-optimized content", "Keyword integration", "Downloadable PDF"],
             accentClass: "hover:border-violet-500/50 hover:shadow-violet-500/10",
             btnClass: "bg-violet-600 hover:bg-violet-700",
+        },
+        {
+            type: "cover-letter" as any,
+            nextStep: 7,
+            icon: <FileText className="w-6 h-6" />,
+            iconBg: "from-amber-500 to-orange-600",
+            title: "Create Cover Letter",
+            description: "Generate a professional, tailored cover letter based on your CV and the job requirements.",
+            benefits: ["AI-tailored narrative", "Professional formatting", "Download as PDF"],
+            accentClass: "hover:border-amber-500/50 hover:shadow-amber-500/10",
+            btnClass: "bg-amber-600 hover:bg-amber-700",
         },
     ];
 

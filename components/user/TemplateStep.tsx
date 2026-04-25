@@ -1,11 +1,19 @@
-"use client";
-
+import { useEffect, useState } from "react";
+import axios from "axios";
 import { Label } from "@/components/ui/label";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import Image from "next/image";
 import NavBar from "@/components/NavBar";
 import { Loader2, Download, ArrowLeft, LayoutTemplate, ArrowRight } from "lucide-react";
+
+interface Template {
+    id?: string;
+    value: string;
+    label: string;
+    imageUrl: string;
+    ejs?: string;
+}
 
 interface TemplateStepProps {
     template: string;
@@ -17,9 +25,9 @@ interface TemplateStepProps {
     loader: boolean;
 }
 
-const TEMPLATES = [
-    { value: "temp1", label: "Template 1" },
-    { value: "temp2", label: "Template 2" },
+const STATIC_TEMPLATES: Template[] = [
+    { value: "temp1", label: "Classic Serif", imageUrl: "/templates/temp1.png" },
+    { value: "temp2", label: "Modern Clean", imageUrl: "/templates/temp2.png" },
 ];
 
 export function TemplateStep({
@@ -31,6 +39,36 @@ export function TemplateStep({
     downloadCV,
     loader,
 }: TemplateStepProps) {
+    const [allTemplates, setAllTemplates] = useState<Template[]>(STATIC_TEMPLATES);
+    const [fetching, setFetching] = useState(false);
+
+    useEffect(() => {
+        const fetchTemplates = async () => {
+            setFetching(true);
+            try {
+                const res = await axios.get("/api/templates");
+                if (res.data.status === "ok") {
+                    console.log(res.data.templates);
+                    const dynamicMapped = res.data.templates.map((t: any) => ({
+                        id: t.id,
+                        value: t.id, // Use ID as value for dynamic ones
+                        label: t.title,
+                        imageUrl: t.imageUrl,
+                    }));
+                    setAllTemplates([...STATIC_TEMPLATES, ...dynamicMapped]);
+                }
+            } catch (err) {
+                console.error("Failed to fetch templates", err);
+            } finally {
+                setFetching(false);
+            }
+        };
+        fetchTemplates();
+    }, []);
+
+    const selectedTemplateObj = allTemplates.find(t => t.value === template);
+    const hoveredTemplateObj = allTemplates.find(t => t.value === hoveredTemplate);
+
     return (
         <div className="min-h-screen bg-background flex flex-col">
             <NavBar loginPage={false} showSideBarTrigger={false} />
@@ -52,73 +90,75 @@ export function TemplateStep({
 
                     {/* Template picker card */}
                     <div className="rounded-2xl border border-border/60 bg-card p-6 shadow-sm space-y-5">
-                        <div>
-                            <Label className="text-sm font-semibold text-foreground mb-2 block">Select Template</Label>
-                            <div className="relative flex items-start gap-4">
-                                <Select
-                                    onValueChange={(value) => {
-                                        setTemplate(value);
-                                        setHoveredTemplate(null);
-                                    }}
-                                >
-                                    <SelectTrigger className="w-52 rounded-xl border-border/60 bg-background text-foreground h-11">
-                                        <SelectValue placeholder="Choose template…" />
-                                    </SelectTrigger>
+                        <div className="flex items-center justify-between">
+                            <Label className="text-sm font-semibold text-foreground block">Select Template</Label>
+                            {fetching && <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />}
+                        </div>
+                        <div className="relative flex items-start gap-4">
+                            <Select
+                                value={template}
+                                onValueChange={(value) => {
+                                    setTemplate(value);
+                                    setHoveredTemplate(null);
+                                }}
+                            >
+                                <SelectTrigger className="w-64 rounded-xl border-border/60 bg-background text-foreground h-11">
+                                    <SelectValue placeholder="Choose template…" />
+                                </SelectTrigger>
 
-                                    <SelectContent className="rounded-xl border-border/60 bg-card">
-                                        {TEMPLATES.map((t) => (
-                                            <SelectItem
-                                                key={t.value}
-                                                value={t.value}
-                                                onMouseEnter={() => setHoveredTemplate(t.value)}
-                                                onMouseLeave={() => setHoveredTemplate(null)}
-                                                className="rounded-lg cursor-pointer"
-                                            >
-                                                <div className="flex items-center gap-3 py-1">
-                                                    <Image
-                                                        src={`/templates/${t.value}.png`}
+                                <SelectContent className="rounded-xl border-border/60 bg-card max-h-80">
+                                    {allTemplates.map((t) => (
+                                        <SelectItem
+                                            key={t.value}
+                                            value={t.value}
+                                            onMouseEnter={() => setHoveredTemplate(t.value)}
+                                            onMouseLeave={() => setHoveredTemplate(null)}
+                                            className="rounded-lg cursor-pointer"
+                                        >
+                                            <div className="flex items-center gap-3 py-1">
+                                                <div className="w-9 h-12 relative flex-shrink-0">
+                                                    <img
+                                                        src={t.imageUrl}
                                                         alt={t.label}
-                                                        width={36}
-                                                        height={50}
                                                         className="rounded-md border border-border/40 object-cover"
                                                     />
-                                                    <span className="font-medium text-sm">{t.label}</span>
                                                 </div>
-                                            </SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
+                                                <span className="font-medium text-sm">{t.label}</span>
+                                            </div>
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
 
-                                {/* Hover preview */}
-                                {hoveredTemplate && (
-                                    <div className="absolute left-56 top-0 w-72 rounded-2xl border border-border/60 bg-card shadow-2xl p-3 z-50 animate-in fade-in-0 zoom-in-95 duration-200">
-                                        <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide">Preview</p>
-                                        <Image
-                                            src={`/templates/${hoveredTemplate}.png`}
+                            {/* Hover preview */}
+                            {hoveredTemplate && hoveredTemplateObj && (
+                                <div className="absolute left-72 top-0 w-72 rounded-2xl border border-border/60 bg-card shadow-2xl p-3 z-50 animate-in fade-in-0 zoom-in-95 duration-200">
+                                    <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide">Preview: {hoveredTemplateObj.label}</p>
+                                    <div className="relative aspect-[1/1.4] w-full">
+                                        <img
+                                            src={hoveredTemplateObj.imageUrl}
                                             alt="Template Preview"
-                                            width={270}
-                                            height={380}
-                                            className="rounded-xl border border-border/30 w-full"
+                                            className="rounded-xl border border-border/30 object-cover"
                                         />
                                     </div>
-                                )}
-                            </div>
+                                </div>
+                            )}
                         </div>
 
                         {/* Selected template preview */}
-                        {template && !hoveredTemplate && (
+                        {template && !hoveredTemplate && selectedTemplateObj && (
                             <div className="rounded-xl overflow-hidden border border-border/40 bg-muted/30">
                                 <div className="px-3 py-2 text-xs font-semibold text-muted-foreground border-b border-border/30 uppercase tracking-wide">
-                                    Selected: {TEMPLATES.find(t => t.value === template)?.label}
+                                    Selected: {selectedTemplateObj.label}
                                 </div>
-                                <div className="p-3 flex justify-center">
-                                    <Image
-                                        src={`/templates/${template}.png`}
-                                        alt="Selected Template"
-                                        width={200}
-                                        height={280}
-                                        className="rounded-lg border border-border/30 shadow-sm"
-                                    />
+                                <div className="p-4 flex justify-center">
+                                    <div className="relative w-48 aspect-[1/1.4]">
+                                        <img
+                                            src={selectedTemplateObj.imageUrl}
+                                            alt="Selected Template"
+                                            className="rounded-lg border border-border/30 shadow-sm object-cover"
+                                        />
+                                    </div>
                                 </div>
                             </div>
                         )}

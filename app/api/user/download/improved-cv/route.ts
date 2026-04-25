@@ -23,9 +23,8 @@ export async function POST(req: Request) {
         return NextResponse.json({ status: "error", message: "Missing data" }, { status: 400 });
     }
 
-    const templatePath = path.join(process.cwd(), "templates", "cv", `${template}.ejs`);
-
-    const html = await ejs.renderFile(templatePath, {
+    const { renderTemplate } = await import("@/services/TemplateService");
+    const html = await renderTemplate(template, {
         name: cvData.name,
         position: cvData.position,
         links: cvData.links,

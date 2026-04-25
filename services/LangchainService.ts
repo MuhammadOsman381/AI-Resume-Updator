@@ -100,10 +100,10 @@ export const GenerateImprovedCV = async (
                 You are an ATS resume optimizer.
 
                 STRICT RULES:
-                - Do NOT change CV structure
+                - Do NOT change Resume structure
                 - Do NOT add/remove fields
                 - Keep name, links, education unchanged
-                - Improve wording ONLY using job description
+                - Improve or add wording ONLY using job description
                 - Optimize for ATS keywords
                 - Expand project descriptions with detailed responsibilities, technologies, outcomes, and impact
                 - Return ONLY valid JSON
@@ -186,7 +186,6 @@ ${JSON.stringify(safeCV, null, 2)}
         throw new Error("Failed to generate professional email from AI");
     }
 
-    // Sanitize the email body to remove any unsafe HTML (optional but recommended)
     const safeBody = sanitizeHtml(parsed.body, {
         allowedTags: sanitizeHtml.defaults.allowedTags.concat(["p", "br", "ul", "li", "div"]),
         allowedAttributes: false,
@@ -225,14 +224,39 @@ export const CheckATSScore = async (cvJson: any, jobDescription: string) => {
         messages: [
             {
                 role: "system",
-                content: `You are an expert ATS (Applicant Tracking System) analyzer.
-                Analyze the CV against the Job Description and provide a score, feedback, and missing keywords.
+                content: `You are a specialized ATS (Applicant Tracking System) algorithm expert. 
+                Your task is to analyze a CV against a Job Description with UNCOMPROMISING RIGOR.
+
+                STRICT SCORING CRITERIA:
+                1. Keyword Match (30 pts): Do they have the exact tech tools and skills?
+                2. Experience Depth (40 pts): Is the level of responsibility and industry context a direct match?
+                3. Quantifiable Impact (20 pts): Are there numbers, metrics, or clear business outcomes? Penalize generic descriptions.
+                4. Structure & Clarity (10 pts): Is the information easily extractable and logically organized?
+
+                FEEDBACK RULES (Required for the 'feedback' field):
+                - Be blunt and objective. Avoid generic praise.
+                - Directly state if the candidate is a viable match for this specific role.
+                - Explicitly identify the single most critical gap (missing tech, seniority level, or domain experience).
+                - Give one actionable strategic tip to improve the CV's relevance to this JD.
+
+                SCORING TIERS:
+                - 85-100: Industry Top 1%. Perfect alignment.
+                - 70-84: Solid Candidate. Minor gaps in non-critical areas.
+                - 50-69: Potential Match. Significant training or key technical gaps.
+                - 0-49: Non-Match. Do not recommend.
+
+                Be BRUTALLY HONEST. If the candidate is missing a core tech requirement (e.g., job requires Kubernetes and it's not in the CV), the score should not exceed 65.
+
                 ${instructions}
                 `
             },
             {
                 role: "user",
-                content: `JOB DESCRIPTION: ${jobDescription}\n\nCV JSON: ${JSON.stringify(cvJson)}`
+                content: `JOB DESCRIPTION:
+${jobDescription}
+
+CV JSON:
+${JSON.stringify(cvJson, null, 2)}`
             }
         ]
     });
@@ -242,9 +266,52 @@ export const CheckATSScore = async (cvJson: any, jobDescription: string) => {
     content = content.replace(/^```json\n?/, "").replace(/\n?```$/, "").trim();
 
     try {
-        return JSON.parse(content);
+        const parsed = JSON.parse(content);
+        return scoreSchema.parse(parsed); // Validate with zod
     } catch (e) {
         return parser.parse(content);
     }
+};
+
+export const GenerateCoverLetter = async (
+    cvJson: any,
+    jobTitle: string,
+    companyName: string,
+    jobDescription: string
+) => {
+    const CoverLetterSchema = z.object({
+        coverLetter: z.string(),
+    });
+    const parser = StructuredOutputParser.fromZodSchema(CoverLetterSchema);
+
+    const llm = new ChatGroq({
+        apiKey: process.env.GROQ_API_KEY!,
+        model: "meta-llama/llama-4-scout-17b-16e-instruct",
+        temperature: 0.6,
+    });
+
+    const systemMessage = new SystemMessage(`
+        You are an AI cover letter writer.
+
+        STRICT RULES:
+        - Generate a compelling and professional cover letter for a job application.
+        - Use the job title, company name, and job description to tailor the letter.
+        - Highlight relevant skills, projects, tech stack, or experience from the applicant's CV.
+        - Do NOT invent skills or experiences not in the CV.
+        - Maintain a professional and persuasive tone.
+        - Format the cover letter with proper business letter formatting (though exclude addresses if not known).
+        - Return ONLY valid JSON in the following format:
+        ${parser.getFormatInstructions()}
+    `);
+
+    const humanMessage = new HumanMessage(`
+        JOB TITLE: ${jobTitle}
+        COMPANY NAME: ${companyName}
+        JOB DESCRIPTION: ${jobDescription}
+        APPLICANT CV: ${JSON.stringify(cvJson, null, 2)}
+    `);
+
+    const response = await llm.invoke([systemMessage, humanMessage]);
+    return parser.parse(response.content as string);
 };
 

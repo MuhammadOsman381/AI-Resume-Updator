@@ -59,7 +59,6 @@ export async function POST(req: Request) {
     if (cv.length === 0) {
         return NextResponse.json({ message: "CV not found", status: 404 });
     }
-    const templatePath = path.join(process.cwd(), "templates", "cv", `${template}.ejs`);
     let browser;
     if (process.env.PUPPETEER === "local") {
         browser = await puppeteer.launch({ headless: true });
@@ -73,7 +72,8 @@ export async function POST(req: Request) {
     for (const job of jobsRecord) {
         if (job.status === "applied") continue; // skip applied jobs
         const improvedCVJSON = await GenerateImprovedCV(cv[0].cvJson, job.description as string);
-        const html = await ejs.renderFile(templatePath, {
+        const { renderTemplate } = await import("@/services/TemplateService");
+        const html = await renderTemplate(template, {
             name: improvedCVJSON.name,
             position: improvedCVJSON.position,
             links: improvedCVJSON.links,
