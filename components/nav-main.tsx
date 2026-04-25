@@ -120,7 +120,7 @@ export function NavMain({
               className="flex-1 text-left"
               onClick={() => {
                 setCVID(item.items?.[0]?.id)
-                setStep(2)
+                setStep(5)
               }}
             >
               {item.title}

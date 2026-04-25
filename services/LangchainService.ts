@@ -206,3 +206,45 @@ ${JSON.stringify(safeCV, null, 2)}
         body: htmlBody,
     };
 };
+
+export const CheckATSScore = async (cvJson: any, jobDescription: string) => {
+    const scoreSchema = z.object({
+        score: z.number().min(0).max(100),
+        feedback: z.string(),
+        missingKeywords: z.array(z.string()),
+        strengths: z.array(z.string()),
+        weaknesses: z.array(z.string()),
+    });
+
+    const parser = StructuredOutputParser.fromZodSchema(scoreSchema);
+    const instructions = parser.getFormatInstructions();
+
+    const res = await client.chat.completions.create({
+        model: "llama-3.3-70b-versatile",
+        temperature: 0,
+        messages: [
+            {
+                role: "system",
+                content: `You are an expert ATS (Applicant Tracking System) analyzer.
+                Analyze the CV against the Job Description and provide a score, feedback, and missing keywords.
+                ${instructions}
+                `
+            },
+            {
+                role: "user",
+                content: `JOB DESCRIPTION: ${jobDescription}\n\nCV JSON: ${JSON.stringify(cvJson)}`
+            }
+        ]
+    });
+
+    let content = res.choices[0].message.content || "";
+    // Clean up markdown backticks if present
+    content = content.replace(/^```json\n?/, "").replace(/\n?```$/, "").trim();
+
+    try {
+        return JSON.parse(content);
+    } catch (e) {
+        return parser.parse(content);
+    }
+};
+
